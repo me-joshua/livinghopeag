@@ -43,14 +43,14 @@ const App = () => {
   // Floating particles component
   const FloatingParticles = () => (
     <div className="particles">
-      {[...Array(20)].map((_, i) => (
+      {[...Array(15)].map((_, i) => (
         <div
           key={i}
           className="particle"
           style={{
             left: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 8}s`,
-            animationDuration: `${8 + Math.random() * 4}s`
+            animationDelay: `${Math.random() * 12}s`,
+            animationDuration: `${12 + Math.random() * 6}s`
           }}
         />
       ))}
@@ -68,23 +68,23 @@ const App = () => {
             alt="Living Water Church"
             className="w-full h-full object-cover img-transition"
           />
-          <div className="absolute inset-0 gradient-animate opacity-80"></div>
+          <div className="absolute inset-0 gradient-flow opacity-70"></div>
         </div>
         
         <div className="relative z-10 flex items-center justify-center h-full text-center text-white px-4">
           <div className="max-w-4xl fade-in">
-            <h1 className="text-6xl md:text-8xl font-bold mb-6 text-shadow-lg glow-text pulse">
+            <h1 className="text-6xl md:text-8xl font-bold mb-6 text-shadow-lg text-glow">
               Living Water Church
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-shadow slide-in-left">
               "Jesus said to her, 'Everyone who drinks this water will be thirsty again, but whoever drinks the water I give them will never thirst.'" - John 4:13-14
             </p>
-            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-6 mb-8 card-hover glow slide-in-right">
-              <h3 className="text-2xl font-semibold mb-4 wiggle">🎉 Join Us This Friday</h3>
-              <p className="text-lg heartbeat">10:00 AM Oman Time</p>
-              <p className="text-base opacity-90 floating">Come and experience the Living Water</p>
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-6 mb-8 card-hover subtle-glow slide-in-right">
+              <h3 className="text-2xl font-semibold mb-4">🎉 Join Us This Friday</h3>
+              <p className="text-lg">10:00 AM Oman Time</p>
+              <p className="text-base opacity-90">Come and experience the Living Water</p>
             </div>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg btn-primary btn-ripple scale-hover bounce">
+            <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg btn-primary btn-ripple scale-hover">
               Join Our Service ✨
             </button>
           </div>
@@ -96,8 +96,8 @@ const App = () => {
             <button
               key={index}
               onClick={() => setCurrentImageIndex(index)}
-              className={`w-3 h-3 rounded-full transition-all duration-300 pulse ${
-                index === currentImageIndex ? 'bg-white glow' : 'bg-white/50'
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                index === currentImageIndex ? 'bg-white subtle-glow' : 'bg-white/50'
               }`}
             />
           ))}
@@ -110,24 +110,24 @@ const App = () => {
       {/* Announcements Section */}
       <div className="bg-gray-50 py-16 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12 text-gray-800 fade-in glow-text">
-            🎊 Latest Announcements
+          <h2 className="text-4xl font-bold text-center mb-12 text-gray-800 fade-in">
+            Latest Announcements
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white rounded-lg shadow-lg p-6 card-hover stagger-animation">
-              <div className="text-blue-600 text-3xl mb-4 floating icon-bounce">📢</div>
-              <h3 className="text-xl font-semibold mb-3 slide-in-left">Weekly Service</h3>
-              <p className="text-gray-600 fade-in">Join us every Friday at 10:00 AM Oman Time for our weekly worship service. Come as you are and experience God's love.</p>
+              <div className="text-blue-600 text-3xl mb-4 icon-float">📢</div>
+              <h3 className="text-xl font-semibold mb-3">Weekly Service</h3>
+              <p className="text-gray-600">Join us every Friday at 10:00 AM Oman Time for our weekly worship service. Come as you are and experience God's love.</p>
             </div>
             <div className="bg-white rounded-lg shadow-lg p-6 card-hover stagger-animation">
-              <div className="text-green-600 text-3xl mb-4 wiggle icon-bounce">👨‍👩‍👧‍👦</div>
-              <h3 className="text-xl font-semibold mb-3 slide-in-right">Kids Meeting</h3>
-              <p className="text-gray-600 fade-in">Special programs for children every Sunday. Fun activities, stories, and lessons that help kids grow in faith.</p>
+              <div className="text-green-600 text-3xl mb-4 icon-float">👨‍👩‍👧‍👦</div>
+              <h3 className="text-xl font-semibold mb-3">Kids Meeting</h3>
+              <p className="text-gray-600">Special programs for children every Sunday. Fun activities, stories, and lessons that help kids grow in faith.</p>
             </div>
             <div className="bg-white rounded-lg shadow-lg p-6 card-hover stagger-animation">
-              <div className="text-purple-600 text-3xl mb-4 rotate icon-bounce">🌙</div>
-              <h3 className="text-xl font-semibold mb-3 slide-in-left">All Night Meeting</h3>
-              <p className="text-gray-600 fade-in">Monthly overnight prayer and worship sessions. Join us for powerful times of prayer and spiritual breakthrough.</p>
+              <div className="text-purple-600 text-3xl mb-4 icon-float">🌙</div>
+              <h3 className="text-xl font-semibold mb-3">All Night Meeting</h3>
+              <p className="text-gray-600">Monthly overnight prayer and worship sessions. Join us for powerful times of prayer and spiritual breakthrough.</p>
             </div>
           </div>
         </div>
@@ -138,8 +138,8 @@ const App = () => {
   const renderSermons = () => (
     <div className="min-h-screen bg-gray-50 py-16">
       <div className="max-w-7xl mx-auto px-4">
-        <h2 className="text-4xl font-bold text-center mb-12 text-gray-800 fade-in glow-text">
-          🎬 Recent Sermons
+        <h2 className="text-4xl font-bold text-center mb-12 text-gray-800 fade-in">
+          Recent Sermons
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {[
@@ -176,9 +176,9 @@ const App = () => {
                 ></iframe>
               </div>
               <div className="p-6">
-                <h3 className="text-xl font-semibold mb-2 slide-in-left">{sermon.title}</h3>
-                <p className="text-gray-600 mb-4 fade-in">{sermon.description}</p>
-                <div className="text-sm text-gray-500 floating">{sermon.pastor} • {sermon.date}</div>
+                <h3 className="text-xl font-semibold mb-2">{sermon.title}</h3>
+                <p className="text-gray-600 mb-4">{sermon.description}</p>
+                <div className="text-sm text-gray-500">{sermon.pastor} • {sermon.date}</div>
               </div>
             </div>
           ))}
@@ -191,10 +191,10 @@ const App = () => {
     <div className="min-h-screen bg-white py-16">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-16 fade-in">
-          <h2 className="text-4xl font-bold mb-6 text-gray-800 glow-text">
-            🏛️ About Living Water Church
+          <h2 className="text-4xl font-bold mb-6 text-gray-800">
+            About Living Water Church
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto slide-in-left">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             We are a community of believers passionate about experiencing and sharing the life-changing love of Jesus Christ.
           </p>
         </div>
@@ -204,15 +204,15 @@ const App = () => {
             <img
               src="https://images.unsplash.com/photo-1695938746747-ec185ea81325"
               alt="Church Community"
-              className="rounded-lg shadow-lg w-full h-96 object-cover img-transition glow"
+              className="rounded-lg shadow-lg w-full h-96 object-cover img-transition"
             />
           </div>
           <div className="slide-in-right">
-            <h3 className="text-3xl font-bold mb-6 text-gray-800 pulse">Life at Living Water Church</h3>
-            <p className="text-gray-600 mb-6 text-lg fade-in">
+            <h3 className="text-3xl font-bold mb-6 text-gray-800">Life at Living Water Church</h3>
+            <p className="text-gray-600 mb-6 text-lg">
               At Living Water Church, we believe in creating a warm, welcoming environment where everyone can grow in their relationship with God. Our community is built on love, acceptance, and the transformative power of Christ's message.
             </p>
-            <p className="text-gray-600 mb-6 text-lg fade-in">
+            <p className="text-gray-600 mb-6 text-lg">
               We offer various programs and services designed to help you connect with God and with others in our faith community. Whether you're seeking spiritual growth, community connection, or simply exploring faith, you'll find a place here.
             </p>
           </div>
@@ -220,25 +220,25 @@ const App = () => {
 
         <div className="grid md:grid-cols-3 gap-8">
           <div className="bg-blue-50 rounded-lg p-8 text-center card-hover stagger-animation">
-            <div className="text-4xl mb-4 floating icon-bounce">👨‍👩‍👧‍👦</div>
-            <h3 className="text-2xl font-bold mb-4 text-gray-800 wiggle">Kid's Meeting</h3>
-            <p className="text-gray-600 fade-in">
+            <div className="text-4xl mb-4 icon-float">👨‍👩‍👧‍👦</div>
+            <h3 className="text-2xl font-bold mb-4 text-gray-800">Kid's Meeting</h3>
+            <p className="text-gray-600">
               Every Sunday, we host special programs for children aged 3-12. Our kids enjoy interactive Bible stories, music, games, and activities that help them learn about God's love in age-appropriate ways.
             </p>
           </div>
 
           <div className="bg-purple-50 rounded-lg p-8 text-center card-hover stagger-animation">
-            <div className="text-4xl mb-4 rotate icon-bounce">🌙</div>
-            <h3 className="text-2xl font-bold mb-4 text-gray-800 pulse">All Night Meeting</h3>
-            <p className="text-gray-600 fade-in">
+            <div className="text-4xl mb-4 icon-float">🌙</div>
+            <h3 className="text-2xl font-bold mb-4 text-gray-800">All Night Meeting</h3>
+            <p className="text-gray-600">
               Once a month, we gather for powerful overnight prayer and worship sessions. These special services run from 10 PM to 6 AM, featuring extended worship, prayer, testimonies, and seeking God's presence together.
             </p>
           </div>
 
           <div className="bg-green-50 rounded-lg p-8 text-center card-hover stagger-animation">
-            <div className="text-4xl mb-4 heartbeat icon-bounce">💧</div>
-            <h3 className="text-2xl font-bold mb-4 text-gray-800 glow-text">Living Water Experience</h3>
-            <p className="text-gray-600 fade-in">
+            <div className="text-4xl mb-4 icon-float">💧</div>
+            <h3 className="text-2xl font-bold mb-4 text-gray-800">Living Water Experience</h3>
+            <p className="text-gray-600">
               Our church name comes from Jesus' words about living water - the eternal life He offers. We strive to help every person discover this life-giving relationship with Christ that satisfies the deepest longings of the soul.
             </p>
           </div>
@@ -250,8 +250,8 @@ const App = () => {
   const renderEvents = () => (
     <div className="min-h-screen bg-gray-50 py-16">
       <div className="max-w-7xl mx-auto px-4">
-        <h2 className="text-4xl font-bold text-center mb-12 text-gray-800 fade-in glow-text">
-          🎯 Upcoming Events
+        <h2 className="text-4xl font-bold text-center mb-12 text-gray-800 fade-in">
+          Upcoming Events
         </h2>
         
         <div className="grid md:grid-cols-2 gap-8 mb-16">
@@ -261,14 +261,16 @@ const App = () => {
               description: "Join us for a special baptism service at the beach. If you're ready to take this step of faith, contact us to participate.",
               date: "March 25, 2025",
               image: "https://images.unsplash.com/photo-1516474642997-b86ccf7065a4",
-              badge: "Upcoming"
+              badge: "Upcoming",
+              badgeColor: "bg-blue-100 text-blue-800"
             },
             {
               title: "Easter Celebration",
               description: "Celebrate the resurrection of Jesus Christ with us. Special music, messages, and fellowship meal following the service.",
               date: "April 1, 2025",
               image: "https://images.unsplash.com/photo-1655636237961-1fa3457c19a9",
-              badge: "Special"
+              badge: "Special",
+              badgeColor: "bg-green-100 text-green-800"
             }
           ].map((event, index) => (
             <div key={index} className="bg-white rounded-lg shadow-lg overflow-hidden card-hover stagger-animation">
@@ -279,15 +281,13 @@ const App = () => {
               />
               <div className="p-6">
                 <div className="flex items-center mb-2">
-                  <span className={`text-xs font-semibold px-2.5 py-0.5 rounded bounce ${
-                    event.badge === 'Upcoming' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                  }`}>
+                  <span className={`text-xs font-semibold px-2.5 py-0.5 rounded badge-pulse ${event.badgeColor}`}>
                     {event.badge}
                   </span>
-                  <span className="ml-2 text-sm text-gray-500 floating">{event.date}</span>
+                  <span className="ml-2 text-sm text-gray-500">{event.date}</span>
                 </div>
-                <h3 className="text-xl font-semibold mb-2 slide-in-left">{event.title}</h3>
-                <p className="text-gray-600 mb-4 fade-in">{event.description}</p>
+                <h3 className="text-xl font-semibold mb-2">{event.title}</h3>
+                <p className="text-gray-600 mb-4">{event.description}</p>
                 <button className="text-blue-600 hover:text-blue-800 font-semibold btn-ripple scale-hover">
                   Learn More →
                 </button>
@@ -297,7 +297,7 @@ const App = () => {
         </div>
 
         <h3 className="text-3xl font-bold text-center mb-8 text-gray-800 fade-in">
-          📸 Past Events
+          Past Events
         </h3>
         <div className="grid md:grid-cols-3 gap-6">
           {[
@@ -312,8 +312,8 @@ const App = () => {
                 className="w-full h-32 object-cover img-transition"
               />
               <div className="p-4">
-                <h4 className="font-semibold mb-1 wiggle">{event.title}</h4>
-                <p className="text-sm text-gray-600 floating">{event.date}</p>
+                <h4 className="font-semibold mb-1">{event.title}</h4>
+                <p className="text-sm text-gray-600">{event.date}</p>
               </div>
             </div>
           ))}
@@ -326,17 +326,17 @@ const App = () => {
     <div className="min-h-screen bg-white py-16">
       <div className="max-w-4xl mx-auto px-4">
         <div className="text-center mb-12 fade-in">
-          <h2 className="text-4xl font-bold mb-6 text-gray-800 glow-text">
-            💝 Support Our Ministry
+          <h2 className="text-4xl font-bold mb-6 text-gray-800">
+            Support Our Ministry
           </h2>
-          <p className="text-xl text-gray-600 slide-in-left">
+          <p className="text-xl text-gray-600">
             Your generous donations help us continue spreading the Gospel and serving our community.
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 mb-12">
           <div className="bg-blue-50 rounded-lg p-8 card-hover slide-in-left">
-            <h3 className="text-2xl font-bold mb-4 text-gray-800 pulse">💰 Where Your Donation Goes</h3>
+            <h3 className="text-2xl font-bold mb-4 text-gray-800">Where Your Donation Goes</h3>
             <ul className="space-y-3 text-gray-600">
               {[
                 "Supporting local community outreach programs",
@@ -346,7 +346,7 @@ const App = () => {
                 "Providing assistance to families in need"
               ].map((item, index) => (
                 <li key={index} className="flex items-center stagger-animation">
-                  <span className="text-blue-600 mr-3 bounce">•</span>
+                  <span className="text-blue-600 mr-3">•</span>
                   {item}
                 </li>
               ))}
@@ -354,17 +354,17 @@ const App = () => {
           </div>
 
           <div className="bg-gray-50 rounded-lg p-8 card-hover slide-in-right">
-            <h3 className="text-2xl font-bold mb-4 text-gray-800 wiggle">🎁 Ways to Give</h3>
+            <h3 className="text-2xl font-bold mb-4 text-gray-800">Ways to Give</h3>
             <div className="space-y-4">
               <div className="bg-white p-4 rounded-lg border card-hover">
-                <h4 className="font-semibold mb-2 heartbeat">Online Donation</h4>
+                <h4 className="font-semibold mb-2">Online Donation</h4>
                 <p className="text-sm text-gray-600 mb-3">Secure online giving through our payment processor</p>
                 <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded btn-primary btn-ripple">
                   Give Online ✨
                 </button>
               </div>
               <div className="bg-white p-4 rounded-lg border card-hover">
-                <h4 className="font-semibold mb-2 floating">🏦 Bank Transfer</h4>
+                <h4 className="font-semibold mb-2">Bank Transfer</h4>
                 <p className="text-sm text-gray-600 mb-2">Bank: Muscat Bank</p>
                 <p className="text-sm text-gray-600 mb-2">Account: Living Water Church</p>
                 <p className="text-sm text-gray-600">Account Number: 1234567890</p>
@@ -373,11 +373,11 @@ const App = () => {
           </div>
         </div>
 
-        <div className="text-center fade-in">
-          <p className="text-gray-600 mb-6 italic glow-text">
+        <div className="text-center appear">
+          <p className="text-gray-600 mb-6 italic text-lg">
             "Each of you should give what you have decided in your heart to give, not reluctantly or under compulsion, for God loves a cheerful giver." - 2 Corinthians 9:7
           </p>
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded pulse">
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded gentle-pulse">
             <p className="text-sm text-yellow-800">
               <strong>Note:</strong> All donations are used solely for church activities and community service. We maintain full transparency in our financial records.
             </p>
@@ -390,13 +390,13 @@ const App = () => {
   const renderContact = () => (
     <div className="min-h-screen bg-gray-50 py-16">
       <div className="max-w-7xl mx-auto px-4">
-        <h2 className="text-4xl font-bold text-center mb-12 text-gray-800 fade-in glow-text">
-          📞 Contact Us
+        <h2 className="text-4xl font-bold text-center mb-12 text-gray-800 fade-in">
+          Contact Us
         </h2>
         
         <div className="grid lg:grid-cols-2 gap-12">
           <div className="bg-white rounded-lg shadow-lg p-8 card-hover slide-in-left">
-            <h3 className="text-2xl font-bold mb-6 text-gray-800 pulse">📨 Get In Touch</h3>
+            <h3 className="text-2xl font-bold mb-6 text-gray-800">Get In Touch</h3>
             
             <div className="space-y-6">
               {[
@@ -406,29 +406,29 @@ const App = () => {
                 { icon: "⏰", title: "Service Times", content: "Friday Service: 10:00 AM\nSunday Kids Meeting: 3:00 PM\nMonthly All Night: Last Friday" }
               ].map((contact, index) => (
                 <div key={index} className="flex items-start stagger-animation">
-                  <div className="text-blue-600 text-xl mr-4 mt-1 floating">{contact.icon}</div>
+                  <div className="text-blue-600 text-xl mr-4 mt-1 icon-hover">{contact.icon}</div>
                   <div>
-                    <h4 className="font-semibold text-gray-800 wiggle">{contact.title}</h4>
-                    <p className="text-gray-600 whitespace-pre-line fade-in">{contact.content}</p>
+                    <h4 className="font-semibold text-gray-800">{contact.title}</h4>
+                    <p className="text-gray-600 whitespace-pre-line">{contact.content}</p>
                   </div>
                 </div>
               ))}
             </div>
 
             <div className="mt-8">
-              <h4 className="font-semibold text-gray-800 mb-4 heartbeat">🗺️ Location</h4>
+              <h4 className="font-semibold text-gray-800 mb-4">Location</h4>
               <div className="bg-gray-200 rounded-lg h-64 flex items-center justify-center card-hover">
                 <div className="text-center text-gray-500">
-                  <div className="text-4xl mb-2 rotate">🗺️</div>
-                  <p className="pulse">Google Maps Integration</p>
-                  <p className="text-sm floating">Interactive map coming soon</p>
+                  <div className="text-4xl mb-2 icon-float">🗺️</div>
+                  <p>Google Maps Integration</p>
+                  <p className="text-sm">Interactive map coming soon</p>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow-lg p-8 card-hover slide-in-right">
-            <h3 className="text-2xl font-bold mb-6 text-gray-800 bounce">💬 Send Us a Message</h3>
+            <h3 className="text-2xl font-bold mb-6 text-gray-800">Send Us a Message</h3>
             
             <form className="space-y-6">
               {[
@@ -437,7 +437,7 @@ const App = () => {
                 { label: "Phone Number", type: "tel", placeholder: "Enter your phone number" }
               ].map((field, index) => (
                 <div key={index} className="stagger-animation">
-                  <label className="block text-sm font-medium text-gray-700 mb-2 wiggle">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     {field.label}
                   </label>
                   <input
@@ -449,7 +449,7 @@ const App = () => {
               ))}
 
               <div className="stagger-animation">
-                <label className="block text-sm font-medium text-gray-700 mb-2 pulse">Subject</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
                 <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 form-input">
                   <option value="">Select a subject</option>
                   <option value="prayer">Prayer Request</option>
@@ -461,7 +461,7 @@ const App = () => {
               </div>
 
               <div className="stagger-animation">
-                <label className="block text-sm font-medium text-gray-700 mb-2 floating">Message</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
                 <textarea
                   rows={4}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 form-input"
@@ -473,7 +473,7 @@ const App = () => {
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg btn-primary btn-ripple scale-hover"
               >
-                Send Message 📤
+                Send Message
               </button>
             </form>
           </div>
@@ -486,8 +486,8 @@ const App = () => {
     <div className="min-h-screen bg-white py-16">
       <div className="max-w-4xl mx-auto px-4">
         <div className="text-center mb-12 fade-in">
-          <h2 className="text-4xl font-bold mb-6 text-gray-800 glow-text">✝️ Know God</h2>
-          <p className="text-xl text-gray-600 slide-in-left">
+          <h2 className="text-4xl font-bold mb-6 text-gray-800">Know God</h2>
+          <p className="text-xl text-gray-600">
             Discover the life-changing relationship with Jesus Christ, your Lord and Savior
           </p>
         </div>
@@ -531,40 +531,40 @@ const App = () => {
             }
           ].map((step, index) => (
             <div key={index} className="flex items-start space-x-6 stagger-animation">
-              <div className={`flex-shrink-0 w-12 h-12 ${step.color} text-white rounded-full flex items-center justify-center font-bold text-xl pulse glow`}>
+              <div className={`flex-shrink-0 w-12 h-12 ${step.color} text-white rounded-full flex items-center justify-center font-bold text-xl step-indicator`}>
                 {step.number}
               </div>
               <div className="slide-in-right">
-                <h3 className="text-2xl font-bold mb-4 text-gray-800 wiggle">{step.title}</h3>
-                <p className="text-gray-600 mb-4 italic glow-text">{step.verse}</p>
-                <p className="text-gray-600 fade-in">{step.content}</p>
+                <h3 className="text-2xl font-bold mb-4 text-gray-800">{step.title}</h3>
+                <p className="text-gray-600 mb-4 italic">{step.verse}</p>
+                <p className="text-gray-600">{step.content}</p>
               </div>
             </div>
           ))}
         </div>
 
         <div className="bg-blue-50 rounded-lg p-8 mt-12 card-hover">
-          <h3 className="text-2xl font-bold mb-6 text-gray-800 text-center heartbeat">
-            🙏 Ready to Take the Next Step?
+          <h3 className="text-2xl font-bold mb-6 text-gray-800 text-center">
+            Ready to Take the Next Step?
           </h3>
-          <p className="text-gray-600 mb-6 text-center fade-in">
+          <p className="text-gray-600 mb-6 text-center">
             If you want to accept Jesus Christ as your Lord and Savior, you can pray this prayer:
           </p>
-          <div className="bg-white p-6 rounded-lg border-l-4 border-blue-600 glow">
-            <p className="text-gray-700 italic pulse">
+          <div className="bg-white p-6 rounded-lg border-l-4 border-blue-600 subtle-glow">
+            <p className="text-gray-700 italic">
               "Dear God, I know that I am a sinner and I need Your forgiveness. I believe that Jesus Christ died for my sins and rose from the dead. I want to turn from my sins and invite Jesus to come into my heart and life. I want to trust and follow Him as my Lord and Savior. In Jesus' name, Amen."
             </p>
           </div>
           <div className="text-center mt-6">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg btn-primary btn-ripple bounce">
-              I Prayed This Prayer 🙏
+            <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg btn-primary btn-ripple scale-hover">
+              I Prayed This Prayer
             </button>
           </div>
         </div>
 
         <div className="mt-12">
-          <h3 className="text-2xl font-bold mb-6 text-gray-800 text-center glow-text">
-            🎯 What's Next?
+          <h3 className="text-2xl font-bold mb-6 text-gray-800 text-center">
+            What's Next?
           </h3>
           <div className="grid md:grid-cols-3 gap-6">
             {[
@@ -573,9 +573,9 @@ const App = () => {
               { icon: "⛪", title: "Join Our Church", description: "Connect with other believers and grow in your faith." }
             ].map((step, index) => (
               <div key={index} className="text-center p-6 bg-gray-50 rounded-lg card-hover stagger-animation">
-                <div className="text-3xl mb-4 floating">{step.icon}</div>
-                <h4 className="font-semibold mb-2 wiggle">{step.title}</h4>
-                <p className="text-gray-600 text-sm fade-in">{step.description}</p>
+                <div className="text-3xl mb-4 icon-float">{step.icon}</div>
+                <h4 className="font-semibold mb-2">{step.title}</h4>
+                <p className="text-gray-600 text-sm">{step.description}</p>
               </div>
             ))}
           </div>
@@ -601,8 +601,8 @@ const App = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
         <div className="text-center text-white">
-          <div className="text-6xl mb-4 rotate">⛪</div>
-          <h1 className="text-4xl font-bold mb-4 pulse">Living Water Church</h1>
+          <div className="text-6xl mb-4 gentle-pulse">⛪</div>
+          <h1 className="text-4xl font-bold mb-4">Living Water Church</h1>
           <div className="loading w-8 h-8 border-4 border-white border-t-transparent rounded-full mx-auto"></div>
         </div>
       </div>
@@ -616,7 +616,7 @@ const App = () => {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-blue-600 glow-text pulse">⛪ Living Water Church</h1>
+              <h1 className="text-2xl font-bold text-blue-600 text-glow">⛪ Living Water Church</h1>
             </div>
             <div className="hidden md:flex space-x-8">
               {navigation.map((item) => (
@@ -625,17 +625,17 @@ const App = () => {
                   onClick={() => setCurrentSection(item.id)}
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 nav-item ${
                     currentSection === item.id
-                      ? 'bg-blue-600 text-white glow'
+                      ? 'bg-blue-600 text-white subtle-glow'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  <span className="mr-2 floating">{item.icon}</span>
+                  <span className="mr-2">{item.icon}</span>
                   {item.label}
                 </button>
               ))}
             </div>
             <div className="md:hidden">
-              <button className="text-gray-700 hover:text-blue-600 wiggle">
+              <button className="text-gray-700 hover:text-blue-600 icon-hover">
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
@@ -646,23 +646,23 @@ const App = () => {
       </nav>
 
       {/* Main Content */}
-      <main>
+      <main className="section-enter">
         {renderSection()}
       </main>
 
       {/* Footer */}
       <footer className="bg-gray-800 text-white py-12 relative overflow-hidden">
-        <div className="absolute inset-0 gradient-animate opacity-10"></div>
+        <div className="absolute inset-0 gradient-flow opacity-10"></div>
         <div className="max-w-7xl mx-auto px-4 relative z-10">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="fade-in">
-              <h3 className="text-xl font-bold mb-4 glow-text">⛪ Living Water Church</h3>
-              <p className="text-gray-300 floating">
+              <h3 className="text-xl font-bold mb-4">⛪ Living Water Church</h3>
+              <p className="text-gray-300">
                 Sharing the life-changing love of Jesus Christ with our community and the world.
               </p>
             </div>
             <div className="slide-in-left">
-              <h4 className="text-lg font-semibold mb-4 pulse">Quick Links</h4>
+              <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2">
                 {['About Us', 'Services', 'Events', 'Contact'].map((link, index) => (
                   <li key={index} className="stagger-animation">
@@ -672,18 +672,18 @@ const App = () => {
               </ul>
             </div>
             <div className="slide-in-right">
-              <h4 className="text-lg font-semibold mb-4 wiggle">Service Times</h4>
+              <h4 className="text-lg font-semibold mb-4">Service Times</h4>
               <ul className="space-y-2 text-gray-300">
-                <li className="floating">Friday: 10:00 AM</li>
-                <li className="bounce">Sunday Kids: 3:00 PM</li>
-                <li className="pulse">All Night: Monthly</li>
+                <li>Friday: 10:00 AM</li>
+                <li>Sunday Kids: 3:00 PM</li>
+                <li>All Night: Monthly</li>
               </ul>
             </div>
-            <div className="fade-in">
-              <h4 className="text-lg font-semibold mb-4 heartbeat">Connect With Us</h4>
+            <div className="appear">
+              <h4 className="text-lg font-semibold mb-4">Connect With Us</h4>
               <div className="flex space-x-4">
                 {['📘', '📷', '🐦', '📺'].map((icon, index) => (
-                  <a key={index} href="#" className="text-gray-300 hover:text-white text-2xl floating scale-hover">
+                  <a key={index} href="#" className="text-gray-300 hover:text-white text-2xl scale-hover icon-hover">
                     {icon}
                   </a>
                 ))}
@@ -691,7 +691,7 @@ const App = () => {
             </div>
           </div>
           <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
-            <p className="glow-text">&copy; 2025 Living Water Church. All rights reserved. ✨</p>
+            <p>&copy; 2025 Living Water Church. All rights reserved.</p>
           </div>
         </div>
       </footer>
