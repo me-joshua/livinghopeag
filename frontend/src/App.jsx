@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import './App.css';
 import { 
   Home, 
@@ -36,7 +36,9 @@ import {
   EyeOff,
   Youtube,
   Instagram,
-  Facebook
+  Facebook,
+  Image,
+  Edit
 } from 'lucide-react';
 
 // Comprehensive list of countries with phone codes (sorted alphabetically)
@@ -260,6 +262,7 @@ const MEDIA_TYPE_OPTIONS = [
 
 // Event category options for admin panel
 const EVENT_CATEGORY_OPTIONS = [
+  { value: 'general', label: 'General', icon: <Calendar className="w-4 h-4" /> },
   { value: 'service', label: 'Service', icon: <Church className="w-4 h-4" /> },
   { value: 'prayer', label: 'Prayer Meeting', icon: <Heart className="w-4 h-4" /> },
   { value: 'fellowship', label: 'Fellowship', icon: <Users className="w-4 h-4" /> },
@@ -269,6 +272,315 @@ const EVENT_CATEGORY_OPTIONS = [
   { value: 'children', label: "Children's Event", icon: <Sparkles className="w-4 h-4" /> },
   { value: 'special', label: 'Special Event', icon: <PartyPopper className="w-4 h-4" /> }
 ];
+
+// Helper function to convert various Google Maps URL formats to proper embed URLs
+const convertToGoogleMapsEmbed = (location) => {
+  if (!location) return null;
+  
+  // If it's already an embed URL, return as is
+  if (location.includes('maps/embed')) {
+    return location;
+  }
+  
+  // If it's coordinates (lat,lng format)
+  const coordRegex = /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/;
+  const coordMatch = location.match(coordRegex);
+  if (coordMatch) {
+    const [, lat, lng] = coordMatch;
+    // Use a format that includes a marker pin
+    return `https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+  }
+  
+  // If it's a Google Maps URL with coordinates in q parameter
+  const qParamMatch = location.match(/[?&]q=([^&]+)/);
+  if (qParamMatch) {
+    const qValue = decodeURIComponent(qParamMatch[1]);
+    const coordInQ = qValue.match(/^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/);
+    if (coordInQ) {
+      const [, lat, lng] = coordInQ;
+      return `https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    }
+    // For place names or addresses, include the query which will show a pin
+    return `https://maps.google.com/maps?q=${encodeURIComponent(qValue)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+  }
+  
+  // If it's a full Google Maps URL, try to extract coordinates from the URL path
+  if (location.includes('google.com/maps') || location.includes('maps.google.com')) {
+    // Handle /place/ URLs with DMS coordinates like: /place/23°38'03.8"N+58°06'20.0"E
+    if (location.includes('/place/')) {
+      const placeMatch = location.match(/\/place\/([^\/\?]+)/);
+      if (placeMatch) {
+        const placeString = decodeURIComponent(placeMatch[1]);
+        
+        // Parse DMS (Degrees Minutes Seconds) format
+        const dmsRegex = /(\d+)°(\d+)'([\d.]+)"([NS])\+(\d+)°(\d+)'([\d.]+)"([EW])/;
+        const dmsMatch = placeString.match(dmsRegex);
+        
+        if (dmsMatch) {
+          const [, latDeg, latMin, latSec, latDir, lngDeg, lngMin, lngSec, lngDir] = dmsMatch;
+          
+          // Convert DMS to decimal degrees
+          let lat = parseInt(latDeg) + parseInt(latMin)/60 + parseFloat(latSec)/3600;
+          let lng = parseInt(lngDeg) + parseInt(lngMin)/60 + parseFloat(lngSec)/3600;
+          
+          // Apply direction (negative for S and W)
+          if (latDir === 'S') lat = -lat;
+          if (lngDir === 'W') lng = -lng;
+          
+          return `https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+        }
+      }
+    }
+    
+    // Handle URLs like: https://maps.google.com/@23.634389,58.105556,15z
+    const atMatch = location.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    if (atMatch) {
+      const [, lat, lng] = atMatch;
+      return `https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    }
+    
+    // Handle standard /maps URLs by converting to embed format
+    if (location.includes('/maps?')) {
+      const urlParams = new URLSearchParams(location.split('?')[1]);
+      const q = urlParams.get('q');
+      if (q) {
+        return `https://maps.google.com/maps?q=${encodeURIComponent(q)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+      }
+      // If no q parameter, try to convert the URL directly
+      return location.replace('maps.google.com/maps', 'maps.google.com/maps').replace(/([?&])([^=]+=[^&]*)/g, (match, prefix, param) => {
+        if (param.startsWith('q=')) {
+          return `${prefix}${param}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+        }
+        return '';
+      }) || `${location}&output=embed`;
+    }
+    
+    // If it's a Google Maps share URL, extract what we can
+    if (location.includes('goo.gl/maps') || location.includes('maps.app.goo.gl')) {
+      // For shortened URLs, we'll need to use them as-is but convert to embed
+      const baseUrl = location.split('?')[0];
+      return `https://maps.google.com/maps?q=${encodeURIComponent(baseUrl)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    }
+  }
+  
+  // If it's just a place name or address, create an embed URL with pin
+  if (!location.includes('http')) {
+    return `https://maps.google.com/maps?q=${encodeURIComponent(location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+  }
+  
+  // Default fallback - try to convert any URL to show a pin
+  return `https://maps.google.com/maps?q=${encodeURIComponent(location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+};
+
+// ScrollToTop component to handle scroll position on route changes
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
+
+// Event Detail Page Component
+const EventDetailPage = () => {
+  const { eventId } = useParams();
+  const navigate = useNavigate();
+  const [eventDetail, setEventDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchEventDetail = async () => {
+      try {
+        const response = await fetch(`http://localhost:8001/api/events/${eventId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setEventDetail(data);
+        } else {
+          setError('Event not found');
+        }
+      } catch (error) {
+        console.error('Failed to fetch event details:', error);
+        setError('Failed to load event details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (eventId) {
+      fetchEventDetail();
+    }
+  }, [eventId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-16 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading event details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !eventDetail) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-16 flex items-center justify-center">
+        <div className="text-center">
+          <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Event Not Found</h2>
+          <p className="text-gray-600 mb-6">{error || 'The event you are looking for does not exist.'}</p>
+          <button
+            onClick={() => navigate('/events')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200"
+          >
+            Back to Events
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const eventDate = new Date(eventDetail.date);
+  const isPastEvent = eventDate < new Date();
+  const categoryInfo = EVENT_CATEGORY_OPTIONS.find(cat => cat.value === eventDetail.category);
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-16">
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Header with back button */}
+        <div className="mb-8">
+          <button
+            onClick={() => navigate('/events')}
+            className="flex items-center text-blue-600 hover:text-blue-700 mb-4 transition-colors duration-200"
+          >
+            <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Events
+          </button>
+        </div>
+
+        {/* Event Header */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+          <div className="w-full h-64 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+            <div className="text-center text-white">
+              <Calendar className="h-16 w-16 mx-auto mb-4" />
+              <p className="text-lg font-bold tracking-wide drop-shadow-lg">Event Image</p>
+            </div>
+          </div>
+          
+          <div className="p-8">
+            <div className="flex items-center mb-4">
+              {categoryInfo && (
+                <span className="inline-flex items-center text-sm font-semibold px-3 py-1 rounded-full bg-blue-100 text-blue-800 mr-4">
+                  {categoryInfo.icon}
+                  <span className="ml-2">{categoryInfo.label}</span>
+                </span>
+              )}
+              <span className="text-sm text-gray-500">
+                <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold shadow-md text-base">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  {eventDate.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                  <span className="mx-2">|</span>
+                  <Clock className="h-5 w-5 mr-2" />
+                  {eventDetail.time}
+                </span>
+              </span>
+            </div>
+            
+            <h1 className="text-4xl font-bold text-gray-800 mb-4">{eventDetail.title}</h1>
+            <p className="text-lg text-gray-600 leading-relaxed">{eventDetail.description}</p>
+          </div>
+        </div>
+
+        {/* Location Section - Only show for upcoming events */}
+        {eventDetail.location && !isPastEvent && (
+          <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <MapPin className="h-6 w-6 mr-2 text-blue-600" />
+              Location
+            </h2>
+            
+            {(() => {
+              const embedUrl = convertToGoogleMapsEmbed(eventDetail.location);
+              const isMapUrl = eventDetail.location.includes('google.com/maps') || eventDetail.location.includes('maps.google.com') || /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/.test(eventDetail.location);
+              
+              return isMapUrl ? (
+                <div className="space-y-4">
+                  <a
+                    href={eventDetail.location.includes('http') ? eventDetail.location : `https://maps.google.com/?q=${encodeURIComponent(eventDetail.location)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-blue-600 hover:text-blue-700 transition-colors duration-200"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View on Google Maps
+                  </a>
+                  
+                  <div className="w-full h-64 border border-gray-300 rounded-lg overflow-hidden">
+                    <iframe
+                      src={embedUrl}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen=""
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="Event Location"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-600">{eventDetail.location}</p>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* Gallery Section */}
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+            <Image className="h-6 w-6 mr-2 text-blue-600" />
+            Event Gallery
+          </h2>
+          
+          {isPastEvent ? (
+            <div className="text-center py-12">
+              <Image className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+              <p className="text-gray-600 text-lg">Gallery photos are being processed.</p>
+              <p className="text-gray-500 mt-2">Photos from this event will be available soon!</p>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Clock className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+              <p className="text-gray-600 text-lg">Check back after the event!</p>
+              <p className="text-gray-500 mt-2">Photos will be available once the event is completed.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Contact Information */}
+        {eventDetail.contact_info && !isPastEvent && (
+          <div className="bg-white rounded-lg shadow-lg p-8 mt-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <Phone className="h-6 w-6 mr-2 text-blue-600" />
+              Contact Information
+            </h2>
+            <p className="text-gray-600">{eventDetail.contact_info}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 // Main component that will contain all the routing logic
 const AppContent = () => {
@@ -300,8 +612,11 @@ const AppContent = () => {
   
   // Admin dropdown states
   const [isAnnouncementIconDropdownOpen, setIsAnnouncementIconDropdownOpen] = useState(false);
+  const [isEditAnnouncementIconDropdownOpen, setIsEditAnnouncementIconDropdownOpen] = useState(false);
   const [isMediaTypeDropdownOpen, setIsMediaTypeDropdownOpen] = useState(false);
+  const [isEditMediaTypeDropdownOpen, setIsEditMediaTypeDropdownOpen] = useState(false);
   const [isEventCategoryDropdownOpen, setIsEventCategoryDropdownOpen] = useState(false);
+  const [isEditEventCategoryDropdownOpen, setIsEditEventCategoryDropdownOpen] = useState(false);
   
 
 
@@ -316,8 +631,14 @@ const AppContent = () => {
   const [adminEvents, setAdminEvents] = useState([]);
   const [adminAnnouncements, setAdminAnnouncements] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
-  const [showAllAnnouncements, setShowAllAnnouncements] = useState(false);
   const [newAnnouncement, setNewAnnouncement] = useState({
+    title: '',
+    content: '',
+    date: '',
+    icon: 'Megaphone'
+  });
+  const [editingAnnouncement, setEditingAnnouncement] = useState(null);
+  const [editAnnouncementData, setEditAnnouncementData] = useState({
     title: '',
     content: '',
     date: '',
@@ -334,7 +655,30 @@ const AppContent = () => {
     duration: '',
     type: 'video' // 'video' or 'audio'
   });
+  const [editingMedia, setEditingMedia] = useState(null);
+  const [editMediaData, setEditMediaData] = useState({
+    title: '',
+    description: '',
+    video_url: '',
+    audio_url: '',
+    name: '',
+    date: '',
+    scripture: '',
+    duration: '',
+    type: 'video'
+  });
   const [newEvent, setNewEvent] = useState({
+    title: '',
+    description: '',
+    date: '',
+    time: '',
+    location: '',
+    category: 'service',
+    registration_required: false,
+    contact_info: ''
+  });
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [editEventData, setEditEventData] = useState({
     title: '',
     description: '',
     date: '',
@@ -357,12 +701,122 @@ const AppContent = () => {
   // Contact form ref for scrolling
   const contactFormRef = useRef(null);
 
+  // Logout confirmation modal state
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  // Authentication error state
+  const [authError, setAuthError] = useState('');
+
   // Auto-switching images for home page (using local images)
   const heroImages = [
     '/images/hero/hero-1.jpg',
     '/images/hero/hero-2.jpg', 
     '/images/hero/hero-3.jpg'
   ];
+
+  // Authentication utility functions
+  const isTokenExpired = (token) => {
+    if (!token) return true;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      const expirationTime = payload.exp;
+      
+      // Add 30 seconds buffer to account for minor time differences
+      const timeUntilExpiry = expirationTime - currentTime;
+      const isExpired = timeUntilExpiry <= 30; // 30-second buffer
+      
+      if (isExpired) {
+        console.log('Token expired check:');
+        console.log('Current time:', new Date(currentTime * 1000));
+        console.log('Token expires:', new Date(expirationTime * 1000));
+        console.log('Time until expiry (seconds):', Math.floor(timeUntilExpiry));
+      }
+      
+      return isExpired;
+    } catch (error) {
+      console.error('Error parsing token:', error);
+      return true;
+    }
+  };
+
+  const handleTokenExpired = (reason = 'Session expired') => {
+    console.log('Token expired, logging out user');
+    setAdminToken(null);
+    localStorage.removeItem('adminToken');
+    // Clear any other sensitive data
+    setContactMessages([]);
+    setAdminSermons([]);
+    setAdminEvents([]);
+    setAdminAnnouncements([]);
+    
+    // Show user-friendly message
+    if (reason === 'Session expired') {
+      setAuthError('Your session has expired. Please log in again.');
+    } else if (reason === 'Inactivity') {
+      setAuthError('You have been logged out due to inactivity. Please log in again.');
+    }
+  };
+
+  const validateTokenAndLogout = () => {
+    // Use adminToken state first, fallback to localStorage
+    const tokenToCheck = adminToken || localStorage.getItem('adminToken');
+    
+    if (tokenToCheck && isTokenExpired(tokenToCheck)) {
+      handleTokenExpired();
+      return false;
+    }
+    return !!tokenToCheck; // Return true only if we have a token
+  };
+
+  // Session timeout management
+  const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+  const [lastActivity, setLastActivity] = useState(Date.now());
+  const [sessionTimeoutId, setSessionTimeoutId] = useState(null);
+
+  const resetSessionTimeout = () => {
+    setLastActivity(Date.now());
+    if (sessionTimeoutId) {
+      clearTimeout(sessionTimeoutId);
+    }
+    
+    if (adminToken) {
+      const timeoutId = setTimeout(() => {
+        console.log('Session timeout - logging out due to inactivity');
+        handleTokenExpired('Inactivity');
+      }, SESSION_TIMEOUT);
+      setSessionTimeoutId(timeoutId);
+    }
+  };
+
+  // Track user activity for session management
+  useEffect(() => {
+    const handleUserActivity = () => {
+      if (adminToken) {
+        resetSessionTimeout();
+      }
+    };
+
+    // Add event listeners for user activity
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    events.forEach(event => {
+      document.addEventListener(event, handleUserActivity, { passive: true });
+    });
+
+    // Initial session timeout setup
+    if (adminToken) {
+      resetSessionTimeout();
+    }
+
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, handleUserActivity);
+      });
+      if (sessionTimeoutId) {
+        clearTimeout(sessionTimeoutId);
+      }
+    };
+  }, [adminToken]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -521,6 +975,21 @@ const AppContent = () => {
       fetchAdminAnnouncements();
     }
   }, [adminToken]);
+
+  // Validate token on app load
+  useEffect(() => {
+    const storedToken = localStorage.getItem('adminToken');
+    if (storedToken) {
+      if (isTokenExpired(storedToken)) {
+        console.log('Stored token is expired, clearing it');
+        localStorage.removeItem('adminToken');
+        setAdminToken(null);
+      } else {
+        console.log('Valid token found, user remains logged in');
+        setAdminToken(storedToken);
+      }
+    }
+  }, []); // Run only once on mount
 
   // Fetch public media
   const fetchSermons = async () => {
@@ -815,6 +1284,8 @@ const AppContent = () => {
   // Admin functions
   const handleAdminLogin = async (e) => {
     e.preventDefault();
+    setAuthError(''); // Clear any previous errors
+    
     try {
       const response = await fetch('http://localhost:8001/api/admin/login', {
         method: 'POST',
@@ -824,42 +1295,90 @@ const AppContent = () => {
 
       if (response.ok) {
         const data = await response.json();
+        
+        // Log token details for debugging
+        try {
+          const payload = JSON.parse(atob(data.access_token.split('.')[1]));
+          const currentTime = Date.now() / 1000;
+          const expirationTime = payload.exp;
+          const timeUntilExpiry = expirationTime - currentTime;
+          
+          console.log('Token received:');
+          console.log('Current time:', new Date(currentTime * 1000));
+          console.log('Token expires:', new Date(expirationTime * 1000));
+          console.log('Time until expiry (minutes):', Math.floor(timeUntilExpiry / 60));
+          
+          // Only validate if token expires in less than 1 minute (very suspicious)
+          if (timeUntilExpiry < 60) {
+            setAuthError('Received token expires too soon. Please contact administrator.');
+            return;
+          }
+        } catch (debugError) {
+          console.error('Error parsing token for debug:', debugError);
+        }
+        
         setAdminToken(data.access_token);
         localStorage.setItem('adminToken', data.access_token);
+        resetSessionTimeout(); // Start session timeout
         navigate('/admin');
         fetchContactMessages();
         fetchAdminSermons();
         setAdminCredentials({ username: '', password: '' });
       } else {
-        alert('Invalid credentials');
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 401) {
+          setAuthError('Invalid username or password');
+        } else if (response.status === 429) {
+          setAuthError('Too many login attempts. Please try again later.');
+        } else {
+          setAuthError(errorData.detail || 'Login failed. Please try again.');
+        }
       }
     } catch (error) {
-      alert('Login failed');
+      console.error('Login error:', error);
+      setAuthError('Unable to connect to server. Please check your internet connection and try again.');
     }
   };
 
   const handleAdminLogout = () => {
-    setAdminToken(null);
-    localStorage.removeItem('adminToken');
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    if (sessionTimeoutId) {
+      clearTimeout(sessionTimeoutId);
+      setSessionTimeoutId(null);
+    }
+    handleTokenExpired(); // Use the secure logout function
+    setShowLogoutModal(false);
     navigate('/home');
-    setContactMessages([]);
-    setAdminSermons([]);
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   const fetchContactMessages = async () => {
-    if (!adminToken) {
-      console.log('No admin token available for fetching contact messages');
+    if (!validateTokenAndLogout()) {
+      console.log('Token invalid or expired, user logged out');
       return;
     }
+    
+    // Use the most current token
+    const currentToken = adminToken || localStorage.getItem('adminToken');
+    
     try {
-      console.log('Fetching contact messages with token:', adminToken?.substring(0, 20) + '...');
+      console.log('Fetching contact messages with token:', currentToken?.substring(0, 20) + '...');
       const response = await fetch('http://localhost:8001/api/admin/contact-forms', {
-        headers: { 'Authorization': `Bearer ${adminToken}` }
+        headers: { 'Authorization': `Bearer ${currentToken}` }
       });
       if (response.ok) {
         const data = await response.json();
         console.log('Contact messages response:', data);
         setContactMessages(data);
+      } else if (response.status === 401) {
+        console.log('Unauthorized - token may be expired');
+        handleTokenExpired('Session expired');
       } else {
         console.error('Failed to fetch contact messages, status:', response.status);
       }
@@ -869,7 +1388,7 @@ const AppContent = () => {
   };
 
   const markMessageAsRead = async (messageId) => {
-    if (!adminToken) return;
+    if (!validateTokenAndLogout()) return;
     try {
       const response = await fetch(`http://localhost:8001/api/admin/contact-forms/${messageId}/read`, {
         method: 'PATCH',
@@ -882,6 +1401,8 @@ const AppContent = () => {
             msg.id === messageId ? { ...msg, isRead: true } : msg
           )
         );
+      } else if (response.status === 401) {
+        handleTokenExpired('Session expired');
       }
     } catch (error) {
       console.error('Failed to mark message as read:', error);
@@ -1001,6 +1522,62 @@ Living Hope AG Team`;
     }
   };
 
+  const startEditMedia = (media) => {
+    setEditingMedia(media.id);
+    setEditMediaData({
+      title: media.title,
+      description: media.description,
+      video_url: media.video_url || '',
+      audio_url: media.audio_url || '',
+      name: media.name,
+      date: media.date,
+      scripture: media.scripture || '',
+      duration: media.duration || '',
+      type: media.video_url ? 'video' : 'audio'
+    });
+  };
+
+  const cancelEditMedia = () => {
+    setEditingMedia(null);
+    setEditMediaData({
+      title: '',
+      description: '',
+      video_url: '',
+      audio_url: '',
+      name: '',
+      date: '',
+      scripture: '',
+      duration: '',
+      type: 'video'
+    });
+  };
+
+  const handleEditMedia = async (e) => {
+    e.preventDefault();
+    if (!adminToken) return;
+    try {
+      const response = await fetch(`http://localhost:8001/api/admin/media/${editingMedia}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`
+        },
+        body: JSON.stringify(editMediaData)
+      });
+
+      if (response.ok) {
+        fetchAdminSermons();
+        cancelEditMedia();
+        alert('Media updated successfully!');
+      } else {
+        alert('Failed to update media');
+      }
+    } catch (error) {
+      console.error('Error updating media:', error);
+      alert('Error updating media');
+    }
+  };
+
   // Event management functions
   const fetchAdminEvents = async () => {
     if (!adminToken) return;
@@ -1078,6 +1655,61 @@ Living Hope AG Team`;
     }
   };
 
+  const startEditEvent = (event) => {
+    setEditingEvent(event.id);
+    setEditEventData({
+      title: event.title,
+      description: event.description,
+      date: event.date,
+      time: event.time,
+      location: event.location,
+      category: event.category,
+      registration_required: event.registration_required,
+      contact_info: event.contact_info || ''
+    });
+  };
+
+  const cancelEditEvent = () => {
+    setEditingEvent(null);
+    setEditEventData({
+      title: '',
+      description: '',
+      date: '',
+      time: '',
+      location: '',
+      category: 'service',
+      registration_required: false,
+      contact_info: ''
+    });
+  };
+
+  const handleEditEvent = async (e) => {
+    e.preventDefault();
+    if (!adminToken) return;
+    try {
+      const response = await fetch(`http://localhost:8001/api/admin/events/${editingEvent}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`
+        },
+        body: JSON.stringify(editEventData)
+      });
+
+      if (response.ok) {
+        fetchAdminEvents();
+        fetchEvents(); // Also refresh public events
+        cancelEditEvent();
+        alert('Event updated successfully!');
+      } else {
+        alert('Failed to update event');
+      }
+    } catch (error) {
+      console.error('Error updating event:', error);
+      alert('Error updating event');
+    }
+  };
+
   // Announcement management functions
   const fetchAdminAnnouncements = async () => {
     if (!adminToken) return;
@@ -1139,6 +1771,53 @@ Living Hope AG Team`;
     } catch (error) {
       console.error('Error deleting announcement:', error);
       alert('Error deleting announcement');
+    }
+  };
+
+  const startEditAnnouncement = (announcement) => {
+    setEditingAnnouncement(announcement.id);
+    setEditAnnouncementData({
+      title: announcement.title,
+      content: announcement.content,
+      date: announcement.date,
+      icon: announcement.icon
+    });
+  };
+
+  const cancelEditAnnouncement = () => {
+    setEditingAnnouncement(null);
+    setEditAnnouncementData({
+      title: '',
+      content: '',
+      date: '',
+      icon: 'Megaphone'
+    });
+  };
+
+  const handleEditAnnouncement = async (e) => {
+    e.preventDefault();
+    if (!adminToken) return;
+    try {
+      const response = await fetch(`http://localhost:8001/api/admin/announcements/${editingAnnouncement}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`
+        },
+        body: JSON.stringify(editAnnouncementData)
+      });
+
+      if (response.ok) {
+        fetchAdminAnnouncements();
+        fetchAnnouncements(); // Also refresh public announcements
+        cancelEditAnnouncement();
+        alert('Announcement updated successfully!');
+      } else {
+        alert('Failed to update announcement');
+      }
+    } catch (error) {
+      console.error('Error updating announcement:', error);
+      alert('Error updating announcement');
     }
   };
 
@@ -1250,13 +1929,13 @@ Living Hope AG Team`;
               Latest Announcements
             </h2>
             {announcements.length > 0 && (
-              <button 
-                onClick={() => setShowAllAnnouncements(!showAllAnnouncements)}
+              <Link 
+                to="/announcements"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-medium transition-colors duration-200 flex items-center"
               >
-                {showAllAnnouncements ? 'Show Less' : 'View All'}
-                <ChevronDown className={`ml-2 h-4 w-4 transform transition-transform duration-200 ${showAllAnnouncements ? 'rotate-180' : ''}`} />
-              </button>
+                View All
+                <ChevronDown className="ml-2 h-4 w-4 rotate-[-90deg]" />
+              </Link>
             )}
           </div>
           
@@ -1272,9 +1951,9 @@ Living Hope AG Team`;
               </p>
             </div>
           ) : (
-            // Dynamic announcements
+            // Dynamic announcements - show only first 3 on home page
             <div className="grid md:grid-cols-3 gap-8">
-              {(showAllAnnouncements ? announcements : announcements.slice(0, 3)).map((announcement, index) => {
+              {announcements.slice(0, 3).map((announcement, index) => {
                 const iconConfig = getIconComponent(announcement.icon);
                 const IconComponent = iconConfig.component;
                 const iconColor = iconConfig.color;
@@ -1423,6 +2102,64 @@ Living Hope AG Team`;
     </div>
   );
 
+  const renderAnnouncements = () => (
+    <div className="min-h-screen bg-gray-50 py-16">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="text-center mb-12 fade-in">
+          <h2 className="text-4xl font-bold mb-6 text-gray-800">
+            Church Announcements
+          </h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Stay updated with the latest news and announcements from Living Hope AG
+          </p>
+        </div>
+        
+        {announcements.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="text-gray-400 mb-6">
+              <Megaphone className="h-16 w-16 mx-auto mb-4 opacity-50" />
+            </div>
+            <h3 className="text-2xl font-semibold text-gray-600 mb-4">No Announcements Yet</h3>
+            <p className="text-gray-500 text-lg max-w-md mx-auto">
+              Check back soon for the latest updates and announcements from Living Hope AG.
+            </p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {announcements.map((announcement, index) => {
+              const iconConfig = getIconComponent(announcement.icon);
+              const IconComponent = iconConfig.component;
+              const iconColor = iconConfig.color;
+              
+              return (
+                <div key={announcement.id} className="bg-white rounded-lg shadow-lg p-6 card-hover stagger-animation relative">
+                  {isNewAnnouncement(announcement.date) && (
+                    <div className="absolute top-4 right-4 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold animate-pulse">
+                      NEW
+                    </div>
+                  )}
+                  <div className={`text-3xl mb-4 icon-float ${iconColor}`}>
+                    <IconComponent className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-3">{announcement.title}</h3>
+                  <p className="text-gray-600 mb-4">{announcement.content}</p>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <Clock className="h-4 w-4 mr-1" />
+                    {new Date(announcement.date).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   const renderAbout = () => (
     <div className="min-h-screen bg-white py-16">
       <div className="max-w-7xl mx-auto px-4">
@@ -1511,7 +2248,11 @@ Living Hope AG Team`;
                     </h3>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                       {upcomingEvents.map((event, index) => (
-                        <div key={event.id || index} className="bg-white rounded-lg shadow-lg overflow-hidden card-hover stagger-animation">
+                        <Link 
+                          key={event.id || index} 
+                          to={`/events/${event.id}`}
+                          className="block bg-white rounded-lg shadow-lg overflow-hidden card-hover stagger-animation transition-transform duration-200 hover:scale-105 cursor-pointer"
+                        >
                           <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
                             <div className="text-center text-gray-500">
                               <Calendar className="h-12 w-12 mx-auto mb-2" />
@@ -1520,8 +2261,8 @@ Living Hope AG Team`;
                           </div>
                           <div className="p-6">
                             <div className="flex items-center mb-2">
-                              <span className="text-xs font-semibold px-2.5 py-0.5 rounded badge-pulse bg-blue-100 text-blue-800">
-                                {event.category || 'Event'}
+                              <span className="text-xs font-semibold px-2.5 py-0.5 rounded bg-blue-100 text-blue-800">
+                                {EVENT_CATEGORY_OPTIONS.find(cat => cat.value === event.category)?.label || event.category || 'Event'}
                               </span>
                               <span className="ml-2 text-sm text-gray-500">
                                 {new Date(event.date).toLocaleDateString()} at {event.time}
@@ -1529,12 +2270,6 @@ Living Hope AG Team`;
                             </div>
                             <h3 className="text-xl font-semibold mb-2">{event.title}</h3>
                             <p className="text-gray-600 mb-4">{event.description}</p>
-                            <div className="text-sm text-gray-500 mb-3">
-                              <span className="flex items-center">
-                                <MapPin className="h-3 w-3 mr-1" />
-                                {event.location}
-                              </span>
-                            </div>
                             {event.registration_required && (
                               <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mb-3">
                                 <p className="text-xs text-yellow-800">Registration Required</p>
@@ -1543,11 +2278,11 @@ Living Hope AG Team`;
                                 )}
                               </div>
                             )}
-                            <button className="text-blue-600 hover:text-blue-800 font-semibold btn-ripple scale-hover">
-                              Learn More →
-                            </button>
+                            <div className="text-blue-600 hover:text-blue-800 font-semibold btn-ripple scale-hover inline-flex items-center">
+                              View Details →
+                            </div>
                           </div>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   </div>
@@ -1569,7 +2304,11 @@ Living Hope AG Team`;
                     </h3>
                     <div className="grid md:grid-cols-3 gap-6">
                       {pastEvents.map((event, index) => (
-                        <div key={event.id || index} className="bg-white rounded-lg shadow-lg overflow-hidden card-hover stagger-animation">
+                        <Link 
+                          key={event.id || index} 
+                          to={`/events/${event.id}`}
+                          className="block bg-white rounded-lg shadow-lg overflow-hidden card-hover stagger-animation transition-transform duration-200 hover:scale-105"
+                        >
                           <div className="w-full h-32 bg-gray-200 flex items-center justify-center">
                             <div className="text-center text-gray-500">
                               <Calendar className="h-8 w-8 mx-auto mb-1" />
@@ -1579,9 +2318,9 @@ Living Hope AG Team`;
                           <div className="p-4">
                             <h4 className="font-semibold mb-1">{event.title}</h4>
                             <p className="text-sm text-gray-600">{new Date(event.date).toLocaleDateString()}</p>
-                            <p className="text-xs text-gray-500 mt-1">{event.location}</p>
+                            <p className="text-xs text-blue-600 mt-2 font-medium">View Gallery →</p>
                           </div>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   </div>
@@ -1595,6 +2334,193 @@ Living Hope AG Team`;
       </div>
     </div>
   );
+
+  // Event Detail Page
+  const renderEventDetail = () => {
+    const { eventId } = useParams();
+    const navigate = useNavigate();
+    const [eventDetail, setEventDetail] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+      const fetchEventDetail = async () => {
+        try {
+          const response = await fetch(`http://localhost:8001/api/events/${eventId}`);
+          if (response.ok) {
+            const data = await response.json();
+            setEventDetail(data);
+          } else {
+            setError('Event not found');
+          }
+        } catch (error) {
+          console.error('Failed to fetch event details:', error);
+          setError('Failed to load event details');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      if (eventId) {
+        fetchEventDetail();
+      }
+    }, [eventId]);
+
+    if (loading) {
+      return (
+        <div className="min-h-screen bg-white py-16 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading event details...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (error || !eventDetail) {
+      return (
+        <div className="min-h-screen bg-white py-16 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Event Not Found</h2>
+            <p className="text-gray-600 mb-6">{error || 'The event you are looking for does not exist.'}</p>
+            <button
+              onClick={() => navigate('/events')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200"
+            >
+              Back to Events
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    const eventDate = new Date(eventDetail.date);
+    const currentDate = new Date();
+    const isEventPast = eventDate < currentDate;
+    const categoryInfo = EVENT_CATEGORY_OPTIONS.find(cat => cat.value === eventDetail.category);
+
+    return (
+      <div className="min-h-screen bg-white py-16">
+        <div className="max-w-4xl mx-auto px-4">
+          {/* Back Button */}
+          <button
+            onClick={() => navigate('/events')}
+            className="mb-6 flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200"
+          >
+            <ChevronDown className="h-4 w-4 mr-2 rotate-90" />
+            Back to Events
+          </button>
+
+          {/* Event Header */}
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+            <div className="w-full h-64 bg-gray-200 flex items-center justify-center">
+              <div className="text-center text-gray-500">
+                <Calendar className="h-16 w-16 mx-auto mb-4" />
+                <p className="text-lg">Event Image</p>
+              </div>
+            </div>
+            
+            <div className="p-8">
+              <div className="flex items-center mb-4">
+                {categoryInfo && (
+                  <span className="flex items-center text-sm font-semibold px-3 py-1 rounded-full bg-blue-100 text-blue-800 mr-4">
+                    {categoryInfo.icon}
+                    <span className="ml-2">{categoryInfo.label}</span>
+                  </span>
+                )}
+                <span className="text-lg text-gray-600">
+                  {eventDate.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })} at {eventDetail.time}
+                </span>
+              </div>
+              
+              <h1 className="text-4xl font-bold text-gray-800 mb-4">{eventDetail.title}</h1>
+              <p className="text-xl text-gray-600 leading-relaxed">{eventDetail.description}</p>
+              
+              {eventDetail.registration_required && !isEventPast && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
+                  <h3 className="font-semibold text-yellow-800 mb-2">Registration Required</h3>
+                  {eventDetail.contact_info && (
+                    <p className="text-yellow-700">{eventDetail.contact_info}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Location Section */}
+          {eventDetail.location && !isEventPast && (
+            <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                <MapPin className="h-6 w-6 mr-2" />
+                Location
+              </h2>
+              {(() => {
+                const embedUrl = convertToGoogleMapsEmbed(eventDetail.location);
+                const isMapUrl = eventDetail.location.includes('google.com/maps') || eventDetail.location.includes('maps.google.com') || /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/.test(eventDetail.location);
+                
+                return isMapUrl ? (
+                  <div>
+                    <iframe
+                      src={embedUrl}
+                      width="100%"
+                      height="300"
+                      style={{ border: 0 }}
+                      allowFullScreen=""
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      className="rounded-lg"
+                    ></iframe>
+                    <a
+                      href={eventDetail.location.includes('http') ? eventDetail.location : `https://maps.google.com/?q=${encodeURIComponent(eventDetail.location)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center mt-4 text-blue-600 hover:text-blue-800 transition-colors duration-200"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Open in Google Maps
+                    </a>
+                  </div>
+                ) : (
+                  <p className="text-gray-600">{eventDetail.location}</p>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Gallery Section */}
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <Eye className="h-6 w-6 mr-2" />
+              Event Gallery
+            </h2>
+            
+            {!isEventPast ? (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-xl font-semibold text-gray-600 mb-2">Gallery Coming Soon</h3>
+                <p className="text-gray-500">
+                  Check back after the event to see photos and highlights from this gathering.
+                </p>
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-xl font-semibold text-gray-600 mb-2">Gallery Not Available</h3>
+                <p className="text-gray-500">
+                  Photos from this event are not yet available. Please check back later or contact us if you have questions.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderGive = () => (
     <div className="min-h-screen bg-white py-16">
@@ -2077,6 +3003,12 @@ Living Hope AG Team`;
             />
           </div>
           
+          {authError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-600 text-center">{authError}</p>
+            </div>
+          )}
+          
           <button
             type="submit"
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200"
@@ -2084,10 +3016,6 @@ Living Hope AG Team`;
             Login to Admin Panel
           </button>
         </form>
-        
-        <div className="mt-6 text-center text-sm text-gray-500">
-          <p>Hint: Username starts with "hope" 🙏</p>
-        </div>
       </div>
     </div>
   );
@@ -2318,26 +3246,133 @@ Living Hope AG Team`;
                 
                 return (
                   <div key={announcement.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200">
-                    <div className="flex justify-between items-start">
-                      <div className="flex gap-4 flex-1">
-                        <div className={`${iconColor} mt-1`}>
-                          <IconComponent className="h-6 w-6" />
+                    {editingAnnouncement === announcement.id ? (
+                      // Edit Mode
+                      <form onSubmit={handleEditAnnouncement} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <input
+                            type="text"
+                            value={editAnnouncementData.title}
+                            onChange={(e) => setEditAnnouncementData({...editAnnouncementData, title: e.target.value})}
+                            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                            required
+                          />
+                          <input
+                            type="date"
+                            value={editAnnouncementData.date}
+                            onChange={(e) => setEditAnnouncementData({...editAnnouncementData, date: e.target.value})}
+                            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                            required
+                          />
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => setIsEditAnnouncementIconDropdownOpen(!isEditAnnouncementIconDropdownOpen)}
+                              className="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 bg-white text-left flex items-center justify-between transition-colors duration-200 hover:border-gray-400"
+                            >
+                              <span className="flex items-center">
+                                {(() => {
+                                  const IconComponent = getIconComponent(editAnnouncementData.icon).component;
+                                  const iconColor = getIconComponent(editAnnouncementData.icon).color;
+                                  return (
+                                    <>
+                                      <IconComponent className={`h-5 w-5 mr-2 ${iconColor}`} />
+                                      <span className="text-gray-700">{editAnnouncementData.icon}</span>
+                                    </>
+                                  );
+                                })()}
+                              </span>
+                              <ChevronDown className="h-4 w-4 text-gray-500" />
+                            </button>
+                            
+                            {isEditAnnouncementIconDropdownOpen && (
+                              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                                {ANNOUNCEMENT_ICONS.map((icon, index) => {
+                                  const IconComponent = icon.component;
+                                  return (
+                                    <button
+                                      key={index}
+                                      type="button"
+                                      onClick={() => {
+                                        setEditAnnouncementData({...editAnnouncementData, icon: icon.name});
+                                        setIsEditAnnouncementIconDropdownOpen(false);
+                                      }}
+                                      className={`w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors duration-150 flex items-center ${
+                                        editAnnouncementData.icon === icon.name ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                                      }`}
+                                    >
+                                      <IconComponent className={`h-4 w-4 mr-3 ${icon.color}`} />
+                                      <span>{icon.name}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            
+                            {/* Click outside to close */}
+                            {isEditAnnouncementIconDropdownOpen && (
+                              <div 
+                                className="fixed inset-0 z-40" 
+                                onClick={() => setIsEditAnnouncementIconDropdownOpen(false)}
+                              ></div>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <h4 className="font-bold text-lg text-gray-800">{announcement.title}</h4>
-                          <p className="text-gray-600 mb-2">Date: {new Date(announcement.date).toLocaleDateString()}</p>
-                          <p className="text-gray-700 mb-3">{announcement.content}</p>
-                          <p className="text-xs text-gray-400">Created: {new Date(announcement.created_at).toLocaleDateString()}</p>
+                        <textarea
+                          value={editAnnouncementData.content}
+                          onChange={(e) => setEditAnnouncementData({...editAnnouncementData, content: e.target.value})}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                          rows="3"
+                          required
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            type="submit"
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                          >
+                            Save Changes
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEditAnnouncement}
+                            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      // View Mode
+                      <div className="flex justify-between items-start">
+                        <div className="flex gap-4 flex-1">
+                          <div className={`${iconColor} mt-1`}>
+                            <IconComponent className="h-6 w-6" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-bold text-lg text-gray-800">{announcement.title}</h4>
+                            <p className="text-gray-600 mb-2">Date: {new Date(announcement.date).toLocaleDateString()}</p>
+                            <p className="text-gray-700 mb-3">{announcement.content}</p>
+                            <p className="text-xs text-gray-400">Created: {new Date(announcement.created_at).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => startEditAnnouncement(announcement)}
+                            className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg transition-colors duration-200"
+                            title="Edit Announcement"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteAnnouncement(announcement.id)}
+                            className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors duration-200"
+                            title="Delete Announcement"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
                       </div>
-                      <button
-                        onClick={() => deleteAnnouncement(announcement.id)}
-                        className="ml-4 bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors duration-200"
-                        title="Delete Announcement"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
+                    )}
                   </div>
                 );
               })}
@@ -2507,31 +3542,180 @@ Living Hope AG Team`;
             <div className="grid gap-4">
               {adminSermons.map((sermon) => (
                 <div key={sermon.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h4 className="font-bold text-lg text-gray-800">{sermon.title}</h4>
-                      <p className="text-gray-600 mb-2">by {sermon.name} • {new Date(sermon.date).toLocaleDateString()}</p>
-                      <p className="text-gray-700 mb-3">{sermon.description}</p>
-                      {sermon.video_url && (
-                        <a 
-                          href={sermon.video_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                  {editingMedia === sermon.id ? (
+                    // Edit Mode
+                    <form onSubmit={handleEditMedia} className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input
+                          type="text"
+                          placeholder="Media Title"
+                          value={editMediaData.title}
+                          onChange={(e) => setEditMediaData({...editMediaData, title: e.target.value})}
+                          className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                          required
+                        />
+                        <input
+                          type="text"
+                          placeholder="Speaker/Pastor Name"
+                          value={editMediaData.name}
+                          onChange={(e) => setEditMediaData({...editMediaData, name: e.target.value})}
+                          className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                          required
+                        />
+                        <input
+                          type="date"
+                          value={editMediaData.date}
+                          onChange={(e) => setEditMediaData({...editMediaData, date: e.target.value})}
+                          className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                          required
+                        />
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setIsEditMediaTypeDropdownOpen(!isEditMediaTypeDropdownOpen)}
+                            className="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 bg-white text-left flex items-center justify-between transition-colors duration-200 hover:border-gray-400"
+                          >
+                            <span className="flex items-center">
+                              {(() => {
+                                const selectedType = MEDIA_TYPE_OPTIONS.find(opt => opt.value === editMediaData.type);
+                                const IconComponent = selectedType?.icon || Video;
+                                return (
+                                  <>
+                                    <IconComponent className="h-4 w-4 mr-2 text-blue-600" />
+                                    <span className="text-gray-700">{selectedType?.label || 'Video Content'}</span>
+                                  </>
+                                );
+                              })()}
+                            </span>
+                            <ChevronDown className="h-4 w-4 text-gray-500" />
+                          </button>
+                          
+                          {isEditMediaTypeDropdownOpen && (
+                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-lg overflow-hidden">
+                              {MEDIA_TYPE_OPTIONS.map((option, index) => {
+                                const IconComponent = option.icon;
+                                return (
+                                  <button
+                                    key={index}
+                                    type="button"
+                                    onClick={() => {
+                                      setEditMediaData({...editMediaData, type: option.value});
+                                      setIsEditMediaTypeDropdownOpen(false);
+                                    }}
+                                    className={`w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors duration-150 flex items-center ${
+                                      editMediaData.type === option.value ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                                    }`}
+                                  >
+                                    <IconComponent className="h-4 w-4 mr-3 text-blue-600" />
+                                    <span>{option.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                          
+                          {/* Click outside to close */}
+                          {isEditMediaTypeDropdownOpen && (
+                            <div 
+                              className="fixed inset-0 z-40" 
+                              onClick={() => setIsEditMediaTypeDropdownOpen(false)}
+                            ></div>
+                          )}
+                        </div>
+                      </div>
+                      <textarea
+                        placeholder="Media Description"
+                        value={editMediaData.description}
+                        onChange={(e) => setEditMediaData({...editMediaData, description: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        rows="3"
+                        required
+                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input
+                          type="url"
+                          placeholder="Video URL"
+                          value={editMediaData.video_url}
+                          onChange={(e) => setEditMediaData({...editMediaData, video_url: e.target.value})}
+                          className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                        <input
+                          type="url"
+                          placeholder="Audio URL"
+                          value={editMediaData.audio_url}
+                          onChange={(e) => setEditMediaData({...editMediaData, audio_url: e.target.value})}
+                          className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input
+                          type="text"
+                          placeholder="Scripture Reference"
+                          value={editMediaData.scripture}
+                          onChange={(e) => setEditMediaData({...editMediaData, scripture: e.target.value})}
+                          className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Duration"
+                          value={editMediaData.duration}
+                          onChange={(e) => setEditMediaData({...editMediaData, duration: e.target.value})}
+                          className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="submit"
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
                         >
-                          <Video className="h-3 w-3" />
-                          Watch Video
-                        </a>
-                      )}
+                          Save Changes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelEditMedia}
+                          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    // View Mode
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h4 className="font-bold text-lg text-gray-800">{sermon.title}</h4>
+                        <p className="text-gray-600 mb-2">by {sermon.name} • {new Date(sermon.date).toLocaleDateString()}</p>
+                        <p className="text-gray-700 mb-3">{sermon.description}</p>
+                        {sermon.video_url && (
+                          <a 
+                            href={sermon.video_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                          >
+                            <Video className="h-3 w-3" />
+                            Watch Video
+                          </a>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => startEditMedia(sermon)}
+                          className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg transition-colors duration-200"
+                          title="Edit Media"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteSermon(sermon.id)}
+                          className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors duration-200"
+                          title="Delete Media"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => deleteSermon(sermon.id)}
-                      className="text-red-600 hover:text-red-800 p-2 rounded transition-colors duration-200"
-                      title="Delete media"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -2667,55 +3851,192 @@ Living Hope AG Team`;
             <div className="grid gap-4">
               {adminEvents.map((event) => (
                 <div key={event.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-bold text-lg text-gray-800">{event.title}</h4>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${{
-                          'service': 'bg-blue-100 text-blue-800',
-                          'prayer': 'bg-green-100 text-green-800',
-                          'fellowship': 'bg-yellow-100 text-yellow-800',
-                          'conference': 'bg-red-100 text-red-800',
-                          'outreach': 'bg-purple-100 text-purple-800',
-                          'youth': 'bg-pink-100 text-pink-800',
-                          'children': 'bg-orange-100 text-orange-800',
-                          'special': 'bg-indigo-100 text-indigo-800'
-                        }[event.category] || 'bg-gray-100 text-gray-800'}`}>
-                          {event.category}
-                        </span>
-                      </div>
-                      <p className="text-gray-600 mb-2 flex items-center gap-4">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {new Date(event.date).toLocaleDateString()}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {event.time}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          {event.location}
-                        </span>
-                      </p>
-                      <p className="text-gray-700 mb-3">{event.description}</p>
-                      {event.registration_required && (
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
-                          <p className="text-sm text-yellow-800 font-medium">Registration Required</p>
-                          {event.contact_info && (
-                            <p className="text-sm text-yellow-700">{event.contact_info}</p>
+                  {editingEvent === event.id ? (
+                    // Edit Mode
+                    <form onSubmit={handleEditEvent} className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input
+                          type="text"
+                          placeholder="Event Title"
+                          value={editEventData.title}
+                          onChange={(e) => setEditEventData({...editEventData, title: e.target.value})}
+                          className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                          required
+                        />
+                        <input
+                          type="date"
+                          value={editEventData.date}
+                          onChange={(e) => setEditEventData({...editEventData, date: e.target.value})}
+                          className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                          required
+                        />
+                        <input
+                          type="time"
+                          value={editEventData.time}
+                          onChange={(e) => setEditEventData({...editEventData, time: e.target.value})}
+                          className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                          required
+                        />
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setIsEditEventCategoryDropdownOpen(!isEditEventCategoryDropdownOpen)}
+                            className="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 transition-colors duration-200 hover:border-gray-400 bg-white text-left flex items-center justify-between"
+                          >
+                            <div className="flex items-center">
+                              {editEventData.category && EVENT_CATEGORY_OPTIONS.find(option => option.value === editEventData.category) ? (
+                                <>
+                                  {EVENT_CATEGORY_OPTIONS.find(option => option.value === editEventData.category).icon}
+                                  <span className="ml-2">{EVENT_CATEGORY_OPTIONS.find(option => option.value === editEventData.category).label}</span>
+                                </>
+                              ) : (
+                                <span className="text-gray-500">Select category...</span>
+                              )}
+                            </div>
+                            <ChevronDown className="h-5 w-5 text-gray-400" />
+                          </button>
+                          
+                          {isEditEventCategoryDropdownOpen && (
+                            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-auto">
+                              {EVENT_CATEGORY_OPTIONS.map((option) => (
+                                <button
+                                  key={option.value}
+                                  type="button"
+                                  onClick={() => {
+                                    setEditEventData({...editEventData, category: option.value});
+                                    setIsEditEventCategoryDropdownOpen(false);
+                                  }}
+                                  className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center"
+                                >
+                                  <span className="mr-2">{option.icon}</span>
+                                  <span>{option.label}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Click outside to close */}
+                          {isEditEventCategoryDropdownOpen && (
+                            <div 
+                              className="fixed inset-0 z-40" 
+                              onClick={() => setIsEditEventCategoryDropdownOpen(false)}
+                            ></div>
                           )}
                         </div>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Location"
+                        value={editEventData.location}
+                        onChange={(e) => setEditEventData({...editEventData, location: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                        required
+                      />
+                      <textarea
+                        placeholder="Event Description"
+                        value={editEventData.description}
+                        onChange={(e) => setEditEventData({...editEventData, description: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                        rows="3"
+                        required
+                      />
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={editEventData.registration_required}
+                            onChange={(e) => setEditEventData({...editEventData, registration_required: e.target.checked})}
+                            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                          />
+                          <span className="text-sm text-gray-700">Registration Required</span>
+                        </label>
+                      </div>
+                      {editEventData.registration_required && (
+                        <input
+                          type="text"
+                          placeholder="Contact Info for Registration"
+                          value={editEventData.contact_info}
+                          onChange={(e) => setEditEventData({...editEventData, contact_info: e.target.value})}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                        />
                       )}
+                      <div className="flex gap-2">
+                        <button
+                          type="submit"
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                        >
+                          Save Changes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelEditEvent}
+                          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    // View Mode
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="font-bold text-lg text-gray-800">{event.title}</h4>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${{
+                            'service': 'bg-blue-100 text-blue-800',
+                            'prayer': 'bg-green-100 text-green-800',
+                            'fellowship': 'bg-yellow-100 text-yellow-800',
+                            'conference': 'bg-red-100 text-red-800',
+                            'outreach': 'bg-purple-100 text-purple-800',
+                            'youth': 'bg-pink-100 text-pink-800',
+                            'children': 'bg-orange-100 text-orange-800',
+                            'special': 'bg-indigo-100 text-indigo-800'
+                          }[event.category] || 'bg-gray-100 text-gray-800'}`}>
+                            {event.category}
+                          </span>
+                        </div>
+                        <p className="text-gray-600 mb-2 flex items-center gap-4">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            {new Date(event.date).toLocaleDateString()}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {event.time}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-4 w-4" />
+                            {event.location}
+                          </span>
+                        </p>
+                        <p className="text-gray-700 mb-3">{event.description}</p>
+                        {event.registration_required && (
+                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
+                            <p className="text-sm text-yellow-800 font-medium">Registration Required</p>
+                            {event.contact_info && (
+                              <p className="text-sm text-yellow-700">{event.contact_info}</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => startEditEvent(event)}
+                          className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg transition-colors duration-200"
+                          title="Edit Event"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteEvent(event.id)}
+                          className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors duration-200"
+                          title="Delete Event"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => deleteEvent(event.id)}
-                      className="text-red-600 hover:text-red-800 p-2 rounded transition-colors duration-200"
-                      title="Delete event"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -2777,12 +4098,15 @@ Living Hope AG Team`;
 
       {/* Main Content */}
       <main className="section-enter">
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={renderHome()} />
           <Route path="/home" element={renderHome()} />
           <Route path="/media" element={renderSermons()} />  {/* Changed from /sermons to /media */}
+          <Route path="/announcements" element={renderAnnouncements()} />
           <Route path="/about" element={renderAbout()} />
           <Route path="/events" element={renderEvents()} />
+          <Route path="/events/:eventId" element={<EventDetailPage />} />
           <Route path="/give" element={renderGive()} />
           <Route path="/contact" element={renderContact()} />
           <Route path="/knowgod" element={renderKnowGod()} />
@@ -2865,6 +4189,37 @@ Living Hope AG Team`;
           </div>
         </div>
       </footer>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 mx-4 max-w-sm w-full">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+              <LogOut className="h-6 w-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 text-center mb-2">
+              Confirm Logout
+            </h3>
+            <p className="text-sm text-gray-500 text-center mb-6">
+              Are you sure you want to log out of the admin panel? You'll need to enter your credentials again to access it.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={cancelLogout}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors duration-200"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

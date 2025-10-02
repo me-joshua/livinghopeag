@@ -1,38 +1,62 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 from typing import List, Optional
+from contextlib import asynccontextmanager
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
+import subprocess
+import json
+from jose import JWTError, jwt, ExpiredSignatureError
+from dotenv import load_dotenv
+from database import get_db, create_tables, verify_password
+from database import ContactForm as DBContactForm, Media as DBMedia, Event as DBEvent, AdminUser as DBAdminUser, Announcement as DBannouncement
 
-app = FastAPI(title="Living Water Church API", version="1.0.0")
+# Load environment variables
+load_dotenv()
 
-# CORS middleware
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    create_tables()
+    print("✅ Database tables created")
+    yield
+    # Shutdown (cleanup if needed)
+    pass
+
+app = FastAPI(title="Living Hope AG API", version="1.0.0", lifespan=lifespan)
+
+# Configuration from environment variables
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-this-secret-key-in-production")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256") 
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+
+# CORS middleware with environment-based origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+security = HTTPBearer()
+
 # Pydantic models
 class ContactForm(BaseModel):
     id: Optional[str] = None
-    name: str
+    fullName: str
     email: str
-    phone: str
+    countryCode: Optional[str] = '+968'
+    phone: Optional[str] = None
     subject: str
     message: str
     contact_permission: bool = False
-    created_at: Optional[datetime] = None
-
-class PrayerRequest(BaseModel):
-    id: Optional[str] = None
-    name: str
-    email: Optional[str] = None
-    prayer_request: str
+    isRead: bool = False
     created_at: Optional[datetime] = None
 
 class Event(BaseModel):
@@ -42,208 +66,475 @@ class Event(BaseModel):
     date: str
     time: str
     location: str
+    category: Optional[str] = 'general'
+    registration_required: Optional[bool] = False
+    contact_info: Optional[str] = ''
     image_url: Optional[str] = None
     is_upcoming: bool = True
     created_at: Optional[datetime] = None
 
-class Sermon(BaseModel):
+class Announcement(BaseModel):
     id: Optional[str] = None
     title: str
-    description: str
-    youtube_url: str
-    pastor: str
+    content: str
     date: str
+    icon: str = 'Megaphone'
     created_at: Optional[datetime] = None
 
-# In-memory storage (replace with MongoDB in production)
-contact_forms = []
-prayer_requests = []
-events = []
-sermons = []
+class Media(BaseModel):
+    id: Optional[str] = None
+    title: str
+    name: str  # Changed from 'pastor' to 'name'
+    date: str
+    description: str
+    video_url: Optional[str] = None
+    audio_url: Optional[str] = None
+    scripture: Optional[str] = None
+    series: Optional[str] = None
+    duration: Optional[str] = None
 
-# Initialize with sample data
-def initialize_sample_data():
-    # Sample sermons
-    sample_sermons = [
-        {
-            "id": str(uuid.uuid4()),
-            "title": "Faith That Moves Mountains",
-            "description": "A powerful message about stepping out in faith and trusting God's promises.",
-            "youtube_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
-            "pastor": "Pastor John",
-            "date": "March 15, 2025",
-            "created_at": datetime.now()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "title": "The Living Water",
-            "description": "Discovering the eternal source of life and refreshment in Jesus Christ.",
-            "youtube_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
-            "pastor": "Pastor Sarah",
-            "date": "March 8, 2025",
-            "created_at": datetime.now()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "title": "Walking in Love",
-            "description": "Understanding how to live out Christ's love in our daily relationships and interactions.",
-            "youtube_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
-            "pastor": "Pastor David",
-            "date": "March 1, 2025",
-            "created_at": datetime.now()
-        }
-    ]
-    
-    # Sample events
-    sample_events = [
-        {
-            "id": str(uuid.uuid4()),
-            "title": "Baptism Service",
-            "description": "Join us for a special baptism service at the beach. If you're ready to take this step of faith, contact us to participate.",
-            "date": "March 25, 2025",
-            "time": "10:00 AM",
-            "location": "Qantab Beach",
-            "image_url": "https://images.unsplash.com/photo-1516474642997-b86ccf7065a4",
-            "is_upcoming": True,
-            "created_at": datetime.now()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "title": "Easter Celebration",
-            "description": "Celebrate the resurrection of Jesus Christ with us. Special music, messages, and fellowship meal following the service.",
-            "date": "April 1, 2025",
-            "time": "10:00 AM",
-            "location": "Church Main Hall",
-            "image_url": "https://images.unsplash.com/photo-1655636237961-1fa3457c19a9",
-            "is_upcoming": True,
-            "created_at": datetime.now()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "title": "Worship Night",
-            "description": "An evening of worship and praise to God.",
-            "date": "February 28, 2025",
-            "time": "7:00 PM",
-            "location": "Church Main Hall",
-            "image_url": "https://images.unsplash.com/photo-1579975096649-e773152b04cb",
-            "is_upcoming": False,
-            "created_at": datetime.now()
-        }
-    ]
-    
-    sermons.extend(sample_sermons)
-    events.extend(sample_events)
+class AdminLogin(BaseModel):
+    username: str
+    password: str
 
-# Initialize sample data
-initialize_sample_data()
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+# Helper functions for admin authentication
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+    return encoded_jwt
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(credentials.credentials, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        username = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+        
+        # Verify user exists in database and is active
+        admin_user = db.query(DBAdminUser).filter(
+            DBAdminUser.username == username, 
+            DBAdminUser.is_active == True
+        ).first()
+        if not admin_user:
+            raise HTTPException(status_code=401, detail="User not found or inactive")
+            
+        return username
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+
+# Database initialization is now handled in the lifespan context manager above
 
 @app.get("/")
 async def root():
-    return {"message": "Living Water Church API is running"}
+    return {"message": "Living Hope AG API is running"}
+
+# Announcement endpoints
+@app.get("/api/announcements")
+async def get_announcements(db: Session = Depends(get_db)):
+    announcements = db.query(DBannouncement).order_by(DBannouncement.created_at.desc()).all()
+    return [
+        {
+            "id": announcement.id,
+            "title": announcement.title,
+            "content": announcement.content,
+            "date": announcement.date,
+            "icon": getattr(announcement, 'icon', 'Megaphone'),
+            "created_at": announcement.created_at
+        } for announcement in announcements
+    ]
+
+# Admin authentication endpoints
+@app.post("/api/admin/login", response_model=Token)
+async def admin_login(admin_data: AdminLogin, db: Session = Depends(get_db)):
+    # Look up admin user in database
+    admin_user = db.query(DBAdminUser).filter(
+        DBAdminUser.username == admin_data.username,
+        DBAdminUser.is_active == True
+    ).first()
+    
+    if not admin_user or not verify_password(admin_data.password, str(admin_user.password_hash)):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password"
+        )
+    
+    # Update last login time
+    setattr(admin_user, 'last_login', datetime.utcnow())
+    db.commit()
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": admin_data.username}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+# Admin-only endpoints
+@app.get("/api/admin/contact-messages")
+async def get_admin_contact_messages(current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
+    messages = db.query(DBContactForm).all()
+    return {
+        "success": True,
+        "messages": [
+            {
+                "id": msg.id,
+                "fullName": msg.fullName,
+                "email": msg.email,
+                "countryCode": msg.countryCode,
+                "phone": msg.phone,
+                "subject": msg.subject,
+                "message": msg.message,
+                "contact_permission": msg.contact_permission,
+                "created_at": msg.created_at
+            } for msg in messages
+        ],
+        "total": len(messages)
+    }
+
+@app.delete("/api/admin/contact-messages/{message_id}")
+async def delete_contact_message(message_id: str, current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
+    message = db.query(DBContactForm).filter(DBContactForm.id == message_id).first()
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+    
+    db.delete(message)
+    db.commit()
+    return {"success": True, "message": "Contact message deleted successfully"}
+
+@app.post("/api/admin/media")
+async def admin_create_media(media: Media, current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
+    db_media = DBMedia(
+        title=media.title,
+        name=media.name,
+        date=media.date,
+        description=media.description,
+        video_url=media.video_url,
+        audio_url=media.audio_url,
+        scripture=media.scripture,
+        series=media.series,
+        duration=media.duration
+    )
+    db.add(db_media)
+    db.commit()
+    db.refresh(db_media)
+    
+    return {
+        "success": True,
+        "message": "Media created successfully",
+        "media": {
+            "id": db_media.id,
+            "title": db_media.title,
+            "name": db_media.name,
+            "date": db_media.date,
+            "description": db_media.description,
+            "video_url": db_media.video_url,
+            "audio_url": db_media.audio_url,
+            "scripture": db_media.scripture,
+            "series": db_media.series,
+            "duration": db_media.duration
+        }
+    }
+
+@app.get("/api/admin/media")
+async def admin_get_media(current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
+    media_items = db.query(DBMedia).all()
+    return {
+        "success": True,
+        "media": [
+            {
+                "id": media.id,
+                "title": media.title,
+                "name": media.name,
+                "date": media.date,
+                "description": media.description,
+                "video_url": media.video_url,
+                "audio_url": media.audio_url,
+                "scripture": media.scripture,
+                "series": media.series,
+                "duration": media.duration
+            } for media in media_items
+        ],
+        "total": len(media_items)
+    }
+
+@app.put("/api/admin/media/{media_id}")
+async def update_media(
+    media_id: str, 
+    media: Media, 
+    current_admin: str = Depends(verify_token), 
+    db: Session = Depends(get_db)
+):
+    db_media = db.query(DBMedia).filter(DBMedia.id == media_id).first()
+    if not db_media:
+        raise HTTPException(status_code=404, detail="Media not found")
+    
+    # Update the media fields
+    db_media.title = media.title
+    db_media.name = media.name
+    db_media.date = media.date
+    db_media.description = media.description
+    db_media.video_url = media.video_url
+    db_media.audio_url = media.audio_url
+    db_media.scripture = media.scripture
+    db_media.series = media.series
+    db_media.duration = media.duration
+    
+    db.commit()
+    db.refresh(db_media)
+    
+    return {
+        "success": True,
+        "message": "Media updated successfully",
+        "media": {
+            "id": db_media.id,
+            "title": db_media.title,
+            "name": db_media.name,
+            "date": db_media.date,
+            "description": db_media.description,
+            "video_url": db_media.video_url,
+            "audio_url": db_media.audio_url,
+            "scripture": db_media.scripture,
+            "series": db_media.series,
+            "duration": db_media.duration
+        }
+    }
+
+@app.delete("/api/admin/media/{media_id}")
+async def admin_delete_media(media_id: str, current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
+    media = db.query(DBMedia).filter(DBMedia.id == media_id).first()
+    if not media:
+        raise HTTPException(status_code=404, detail="Media not found")
+    
+    db.delete(media)
+    db.commit()
+    return {"success": True, "message": "Media deleted successfully"}
 
 # Contact form endpoints
 @app.post("/api/contact")
-async def submit_contact_form(form: ContactForm):
-    form.id = str(uuid.uuid4())
-    form.created_at = datetime.now()
-    contact_forms.append(form.dict())
-    return {"message": "Contact form submitted successfully", "id": form.id}
+async def submit_contact_form(form: ContactForm, db: Session = Depends(get_db)):
+    try:
+        # Create database record
+        db_form = DBContactForm(
+            fullName=form.fullName,
+            email=form.email,
+            countryCode=form.countryCode,
+            phone=form.phone,
+            subject=form.subject,
+            message=form.message,
+            contact_permission=form.contact_permission,
+            isRead=False
+        )
+        db.add(db_form)
+        db.commit()
+        db.refresh(db_form)
+        
+        # Log the submission
+        print(f"📝 New contact form submission from {form.fullName} ({form.email})")
+        
+        return {
+            "message": "Contact form submitted successfully! We will get back to you soon.",
+            "id": db_form.id,
+            "status": "success"
+        }
+    except Exception as e:
+        print(f"❌ Error processing contact form: {str(e)}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to process contact form")
 
-@app.get("/api/contact", response_model=List[ContactForm])
-async def get_contact_forms():
-    return contact_forms
+@app.get("/api/admin/contact-forms")
+async def get_contact_forms(token: str = Depends(verify_token), db: Session = Depends(get_db)):
+    # Order by created_at descending (newest first)
+    forms = db.query(DBContactForm).order_by(DBContactForm.created_at.desc()).all()
+    return [
+        {
+            "id": form.id,
+            "fullName": form.fullName,
+            "email": form.email,
+            "countryCode": form.countryCode,
+            "phone": form.phone,
+            "subject": form.subject,
+            "message": form.message,
+            "contact_permission": form.contact_permission,
+            "isRead": form.isRead,
+            "created_at": form.created_at
+        } for form in forms
+    ]
 
-# Prayer request endpoints
-@app.post("/api/prayer-request")
-async def submit_prayer_request(request: PrayerRequest):
-    request.id = str(uuid.uuid4())
-    request.created_at = datetime.now()
-    prayer_requests.append(request.dict())
-    return {"message": "Prayer request submitted successfully", "id": request.id}
-
-@app.get("/api/prayer-requests", response_model=List[PrayerRequest])
-async def get_prayer_requests():
-    return prayer_requests
+# Mark contact message as read
+@app.patch("/api/admin/contact-forms/{form_id}/read")
+async def mark_contact_form_as_read(form_id: str, token: str = Depends(verify_token), db: Session = Depends(get_db)):
+    form = db.query(DBContactForm).filter(DBContactForm.id == form_id).first()
+    if not form:
+        raise HTTPException(status_code=404, detail="Contact form not found")
+    
+    form.isRead = True
+    db.commit()
+    db.refresh(form)
+    
+    return {"message": "Contact form marked as read", "isRead": form.isRead}
 
 # Event endpoints
-@app.get("/api/events", response_model=List[Event])
-async def get_events():
-    return events
+@app.get("/api/events")
+async def get_events(db: Session = Depends(get_db)):
+    events = db.query(DBEvent).all()
+    return [
+        {
+            "id": event.id,
+            "title": event.title,
+            "date": event.date,
+            "time": event.time,
+            "location": event.location,
+            "description": event.description,
+            "category": event.category,
+            "registration_required": event.registration_required,
+            "contact_info": event.contact_info
+        } for event in events
+    ]
 
-@app.get("/api/events/{event_id}", response_model=Event)
-async def get_event(event_id: str):
-    for event in events:
-        if event["id"] == event_id:
-            return event
-    raise HTTPException(status_code=404, detail="Event not found")
+@app.get("/api/events/{event_id}")
+async def get_event(event_id: str, db: Session = Depends(get_db)):
+    event = db.query(DBEvent).filter(DBEvent.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return {
+        "id": event.id,
+        "title": event.title,
+        "date": event.date,
+        "time": event.time,
+        "location": event.location,
+        "description": event.description,
+        "category": event.category,
+        "registration_required": event.registration_required,
+        "contact_info": event.contact_info
+    }
 
-@app.post("/api/events")
-async def create_event(event: Event):
-    event.id = str(uuid.uuid4())
-    event.created_at = datetime.now()
-    events.append(event.dict())
-    return {"message": "Event created successfully", "id": event.id}
+# Media endpoints (public)
+@app.get("/api/media")
+async def get_media(db: Session = Depends(get_db)):
+    media_items = db.query(DBMedia).all()
+    return [
+        {
+            "id": media.id,
+            "title": media.title,
+            "name": media.name,
+            "date": media.date,
+            "description": media.description,
+            "video_url": media.video_url,
+            "audio_url": media.audio_url,
+            "scripture": media.scripture,
+            "series": media.series,
+            "duration": media.duration
+        } for media in media_items
+    ]
 
-@app.put("/api/events/{event_id}")
-async def update_event(event_id: str, event: Event):
-    for i, existing_event in enumerate(events):
-        if existing_event["id"] == event_id:
-            event.id = event_id
-            event.created_at = existing_event["created_at"]
-            events[i] = event.dict()
-            return {"message": "Event updated successfully"}
-    raise HTTPException(status_code=404, detail="Event not found")
+@app.get("/api/media/{media_id}")
+async def get_media_item(media_id: str, db: Session = Depends(get_db)):
+    media = db.query(DBMedia).filter(DBMedia.id == media_id).first()
+    if not media:
+        raise HTTPException(status_code=404, detail="Media not found")
+    return {
+        "id": media.id,
+        "title": media.title,
+        "name": media.name,
+        "date": media.date,
+        "description": media.description,
+        "video_url": media.video_url,
+        "audio_url": media.audio_url,
+        "scripture": media.scripture,
+        "series": media.series,
+        "duration": media.duration
+    }
 
-@app.delete("/api/events/{event_id}")
-async def delete_event(event_id: str):
-    for i, event in enumerate(events):
-        if event["id"] == event_id:
-            del events[i]
-            return {"message": "Event deleted successfully"}
-    raise HTTPException(status_code=404, detail="Event not found")
+# YouTube video extraction endpoint
+class YouTubeExtractRequest(BaseModel):
+    url: str
 
-# Sermon endpoints
-@app.get("/api/sermons", response_model=List[Sermon])
-async def get_sermons():
-    return sermons
-
-@app.get("/api/sermons/{sermon_id}", response_model=Sermon)
-async def get_sermon(sermon_id: str):
-    for sermon in sermons:
-        if sermon["id"] == sermon_id:
-            return sermon
-    raise HTTPException(status_code=404, detail="Sermon not found")
-
-@app.post("/api/sermons")
-async def create_sermon(sermon: Sermon):
-    sermon.id = str(uuid.uuid4())
-    sermon.created_at = datetime.now()
-    sermons.append(sermon.dict())
-    return {"message": "Sermon created successfully", "id": sermon.id}
-
-@app.put("/api/sermons/{sermon_id}")
-async def update_sermon(sermon_id: str, sermon: Sermon):
-    for i, existing_sermon in enumerate(sermons):
-        if existing_sermon["id"] == sermon_id:
-            sermon.id = sermon_id
-            sermon.created_at = existing_sermon["created_at"]
-            sermons[i] = sermon.dict()
-            return {"message": "Sermon updated successfully"}
-    raise HTTPException(status_code=404, detail="Sermon not found")
-
-@app.delete("/api/sermons/{sermon_id}")
-async def delete_sermon(sermon_id: str):
-    for i, sermon in enumerate(sermons):
-        if sermon["id"] == sermon_id:
-            del sermons[i]
-            return {"message": "Sermon deleted successfully"}
-    raise HTTPException(status_code=404, detail="Sermon not found")
+@app.post("/api/extract-youtube")
+async def extract_youtube_info(request: YouTubeExtractRequest):
+    """Extract video information from YouTube URL using yt-dlp"""
+    try:
+        # Use yt-dlp to extract video metadata
+        cmd = [
+            "yt-dlp",
+            "--skip-download",
+            "--print-json",
+            "--no-warnings",
+            request.url
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        
+        if result.returncode != 0:
+            raise HTTPException(status_code=400, detail=f"Failed to extract video info: {result.stderr}")
+        
+        # Parse the JSON output
+        video_data = json.loads(result.stdout)
+        
+        # Extract the information we need
+        title = video_data.get('title', '')
+        description = video_data.get('description', '')
+        upload_date = video_data.get('upload_date', '')
+        uploader = video_data.get('uploader', '')
+        duration_seconds = video_data.get('duration', 0)
+        
+        # Format the upload date from YYYYMMDD to YYYY-MM-DD
+        formatted_date = ''
+        if upload_date and len(upload_date) == 8:
+            formatted_date = f"{upload_date[:4]}-{upload_date[4:6]}-{upload_date[6:8]}"
+        
+        # Format duration from seconds to MM:SS or HH:MM:SS
+        formatted_duration = ''
+        if duration_seconds and isinstance(duration_seconds, (int, float)):
+            hours = int(duration_seconds // 3600)
+            minutes = int((duration_seconds % 3600) // 60)
+            seconds = int(duration_seconds % 60)
+            
+            if hours > 0:
+                formatted_duration = f"{hours}:{minutes:02d}:{seconds:02d}"
+            else:
+                formatted_duration = f"{minutes}:{seconds:02d}"
+        
+        # Create a nice description if the original is too long or empty
+        if not description or len(description) > 500:
+            description = f"A sermon from {uploader or 'Living Hope AG'}. Watch this inspiring message that will strengthen your faith."
+        
+        return {
+            "success": True,
+            "data": {
+                "title": title,
+                "description": description,
+                "date": formatted_date,
+                "uploader": uploader,
+                "duration": formatted_duration,
+                "duration_seconds": duration_seconds,
+                "original_upload_date": upload_date
+            }
+        }
+        
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=408, detail="Request timeout - video extraction took too long")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Failed to parse video metadata")
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="yt-dlp not found - please install yt-dlp")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 # Church information endpoints
 @app.get("/api/church-info")
 async def get_church_info():
     return {
-        "name": "Living Water Church",
+        "name": "Living Hope AG",
         "address": "123 Church Street, Muscat, Oman",
         "phone": "+968 1234 5678",
         "email": "info@livingwaterchurch.om",
@@ -259,6 +550,164 @@ async def get_church_info():
             "youtube": "#"
         }
     }
+
+# Admin Event Management endpoints
+@app.get("/api/admin/events")
+async def get_admin_events(current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
+    events = db.query(DBEvent).all()
+    return [
+        {
+            "id": event.id,
+            "title": event.title,
+            "date": event.date,
+            "time": event.time,
+            "location": event.location,
+            "description": event.description,
+            "category": event.category,
+            "registration_required": event.registration_required,
+            "contact_info": event.contact_info,
+            "created_at": event.created_at
+        } for event in events
+    ]
+
+@app.post("/api/admin/events")
+async def create_event(event: Event, current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
+    new_event = DBEvent(
+        id=str(uuid.uuid4()),
+        title=event.title,
+        description=event.description,
+        date=event.date,
+        time=event.time,
+        location=event.location,
+        category=event.category,
+        registration_required=event.registration_required,
+        contact_info=event.contact_info,
+        created_at=datetime.now()
+    )
+    db.add(new_event)
+    db.commit()
+    return {"message": "Event created successfully", "event_id": new_event.id}
+
+@app.put("/api/admin/events/{event_id}")
+async def update_event(
+    event_id: str, 
+    event: Event, 
+    current_admin: str = Depends(verify_token), 
+    db: Session = Depends(get_db)
+):
+    db_event = db.query(DBEvent).filter(DBEvent.id == event_id).first()
+    if not db_event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    # Update the event fields
+    db_event.title = event.title
+    db_event.description = event.description
+    db_event.date = event.date
+    db_event.time = event.time
+    db_event.location = event.location
+    db_event.category = event.category
+    db_event.registration_required = event.registration_required
+    db_event.contact_info = event.contact_info
+    
+    db.commit()
+    db.refresh(db_event)
+    
+    return {
+        "success": True,
+        "message": "Event updated successfully",
+        "event": {
+            "id": db_event.id,
+            "title": db_event.title,
+            "description": db_event.description,
+            "date": db_event.date,
+            "time": db_event.time,
+            "location": db_event.location,
+            "category": db_event.category,
+            "registration_required": db_event.registration_required,
+            "contact_info": db_event.contact_info,
+            "created_at": db_event.created_at
+        }
+    }
+
+@app.delete("/api/admin/events/{event_id}")
+async def delete_event(event_id: str, current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
+    event = db.query(DBEvent).filter(DBEvent.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    db.delete(event)
+    db.commit()
+    return {"message": "Event deleted successfully"}
+
+# Admin announcement endpoints
+@app.get("/api/admin/announcements")
+async def admin_get_announcements(current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
+    announcements = db.query(DBannouncement).order_by(DBannouncement.created_at.desc()).all()
+    return [
+        {
+            "id": announcement.id,
+            "title": announcement.title,
+            "content": announcement.content,
+            "date": announcement.date,
+            "icon": getattr(announcement, 'icon', 'Megaphone'),
+            "created_at": announcement.created_at
+        } for announcement in announcements
+    ]
+
+@app.post("/api/admin/announcements")
+async def create_announcement(announcement: Announcement, current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
+    new_announcement = DBannouncement(
+        id=str(uuid.uuid4()),
+        title=announcement.title,
+        content=announcement.content,
+        date=announcement.date,
+        icon=announcement.icon,
+        created_at=datetime.now()
+    )
+    db.add(new_announcement)
+    db.commit()
+    return {"message": "Announcement created successfully", "announcement_id": new_announcement.id}
+
+@app.put("/api/admin/announcements/{announcement_id}")
+async def update_announcement(
+    announcement_id: str, 
+    announcement: Announcement, 
+    current_admin: str = Depends(verify_token), 
+    db: Session = Depends(get_db)
+):
+    db_announcement = db.query(DBannouncement).filter(DBannouncement.id == announcement_id).first()
+    if not db_announcement:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+    
+    # Update the announcement fields
+    db_announcement.title = announcement.title
+    db_announcement.content = announcement.content
+    db_announcement.date = announcement.date
+    db_announcement.icon = announcement.icon
+    
+    db.commit()
+    db.refresh(db_announcement)
+    
+    return {
+        "success": True,
+        "message": "Announcement updated successfully",
+        "announcement": {
+            "id": db_announcement.id,
+            "title": db_announcement.title,
+            "content": db_announcement.content,
+            "date": db_announcement.date,
+            "icon": db_announcement.icon,
+            "created_at": db_announcement.created_at
+        }
+    }
+
+@app.delete("/api/admin/announcements/{announcement_id}")
+async def delete_announcement(announcement_id: str, current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
+    announcement = db.query(DBannouncement).filter(DBannouncement.id == announcement_id).first()
+    if not announcement:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+    db.delete(announcement)
+    db.commit()
+    return {"message": "Announcement deleted successfully"}
 
 # Health check endpoint
 @app.get("/api/health")

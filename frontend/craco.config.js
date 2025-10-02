@@ -11,7 +11,7 @@ module.exports = {
     alias: {
       '@': path.resolve(__dirname, 'src'),
     },
-    configure: (webpackConfig) => {
+    configure: (webpackConfig, { env, paths }) => {
       
       // Disable hot reload completely if environment variable is set
       if (config.disableHotReload) {
@@ -29,6 +29,23 @@ module.exports = {
       
       return webpackConfig;
     },
+  },
+  devServer: (devServerConfig, { env, paths, proxy, allowedHost }) => {
+    // Override the deprecated middleware options
+    delete devServerConfig.onBeforeSetupMiddleware;
+    delete devServerConfig.onAfterSetupMiddleware;
+    
+    // Use the new setupMiddlewares option
+    devServerConfig.setupMiddlewares = (middlewares, devServer) => {
+      // Custom middleware setup can go here
+      return middlewares;
+    };
+    
+    // Set other dev server options
+    devServerConfig.historyApiFallback = true;
+    devServerConfig.hot = !config.disableHotReload;
+    
+    return devServerConfig;
   },
 };
   
