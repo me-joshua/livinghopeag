@@ -49,7 +49,6 @@ env/
 venv/
 
 # Database files (SECURITY: Never commit database files with sensitive data!)
-*.db
 *.sqlite
 *.sqlite3
 backend/livinghope.db
