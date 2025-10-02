@@ -394,7 +394,7 @@ const EventDetailPage = () => {
   useEffect(() => {
     const fetchEventDetail = async () => {
       try {
-        const response = await fetch(`http://localhost:8001/api/events/${eventId}`);
+        const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`);
         if (response.ok) {
           const data = await response.json();
           setEventDetail(data);
@@ -584,6 +584,9 @@ const EventDetailPage = () => {
 
 // Main component that will contain all the routing logic
 const AppContent = () => {
+  // API Base URL - use environment variable or fallback to localhost
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8001';
+  
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [nextImageIndex, setNextImageIndex] = useState(1);
   const [showNext, setShowNext] = useState(false);
@@ -906,7 +909,7 @@ const AppContent = () => {
     setSubmitMessage('');
 
     try {
-      const response = await fetch('http://localhost:8001/api/contact', {
+      const response = await fetch(`${API_BASE_URL}/api/contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -994,7 +997,7 @@ const AppContent = () => {
   // Fetch public media
   const fetchSermons = async () => {
     try {
-      const response = await fetch('http://localhost:8001/api/media');
+      const response = await fetch(`${API_BASE_URL}/api/media`);
       if (response.ok) {
         const data = await response.json();
         setSermons(data);
@@ -1007,7 +1010,7 @@ const AppContent = () => {
   // Fetch public events
   const fetchEvents = async () => {
     try {
-      const response = await fetch('http://localhost:8001/api/events');
+      const response = await fetch(`${API_BASE_URL}/api/events`);
       if (response.ok) {
         const data = await response.json();
         setEvents(data);
@@ -1020,7 +1023,7 @@ const AppContent = () => {
   // Fetch public announcements
   const fetchAnnouncements = async () => {
     try {
-      const response = await fetch('http://localhost:8001/api/announcements');
+      const response = await fetch(`${API_BASE_URL}/api/announcements`);
       if (response.ok) {
         const data = await response.json();
         setAnnouncements(data);
@@ -1066,7 +1069,7 @@ const AppContent = () => {
             console.log('Video URL:', url);
             
             // Call our backend endpoint for YouTube extraction
-            const response = await fetch('http://localhost:8001/api/extract-youtube', {
+            const response = await fetch(`${API_BASE_URL}/api/extract-youtube`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -1287,7 +1290,7 @@ const AppContent = () => {
     setAuthError(''); // Clear any previous errors
     
     try {
-      const response = await fetch('http://localhost:8001/api/admin/login', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(adminCredentials)
@@ -1369,7 +1372,7 @@ const AppContent = () => {
     
     try {
       console.log('Fetching contact messages with token:', currentToken?.substring(0, 20) + '...');
-      const response = await fetch('http://localhost:8001/api/admin/contact-forms', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/contact-forms`, {
         headers: { 'Authorization': `Bearer ${currentToken}` }
       });
       if (response.ok) {
@@ -1390,7 +1393,7 @@ const AppContent = () => {
   const markMessageAsRead = async (messageId) => {
     if (!validateTokenAndLogout()) return;
     try {
-      const response = await fetch(`http://localhost:8001/api/admin/contact-forms/${messageId}/read`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/contact-forms/${messageId}/read`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
@@ -1413,7 +1416,7 @@ const AppContent = () => {
     if (!adminToken) return;
     console.log('Fetching admin sermons with token:', adminToken?.substring(0, 20) + '...');
     try {
-      const response = await fetch('http://localhost:8001/api/admin/media', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/media`, {
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
       console.log('Admin media response status:', response.status);
@@ -1434,7 +1437,7 @@ const AppContent = () => {
     e.preventDefault();
     if (!adminToken) return;
     try {
-      const response = await fetch('http://localhost:8001/api/admin/media', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/media`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1468,7 +1471,7 @@ const AppContent = () => {
   const deleteContactMessage = async (messageId) => {
     if (!adminToken || !confirm('Are you sure you want to delete this message?')) return;
     try {
-      const response = await fetch(`http://localhost:8001/api/admin/contact-messages/${messageId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/contact-messages/${messageId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
@@ -1510,7 +1513,7 @@ Living Hope AG Team`;
   const deleteSermon = async (sermonId) => {
     if (!adminToken || !confirm('Are you sure you want to delete this media?')) return;
     try {
-      const response = await fetch(`http://localhost:8001/api/admin/media/${sermonId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/media/${sermonId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
@@ -1556,7 +1559,7 @@ Living Hope AG Team`;
     e.preventDefault();
     if (!adminToken) return;
     try {
-      const response = await fetch(`http://localhost:8001/api/admin/media/${editingMedia}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/media/${editingMedia}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1583,7 +1586,7 @@ Living Hope AG Team`;
     if (!adminToken) return;
     console.log('Fetching admin events with token:', adminToken?.substring(0, 20) + '...');
     try {
-      const response = await fetch('http://localhost:8001/api/admin/events', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/events`, {
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
       console.log('Admin events response status:', response.status);
@@ -1604,7 +1607,7 @@ Living Hope AG Team`;
     e.preventDefault();
     if (!adminToken) return;
     try {
-      const response = await fetch('http://localhost:8001/api/admin/events', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/events`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1638,7 +1641,7 @@ Living Hope AG Team`;
   const deleteEvent = async (eventId) => {
     if (!window.confirm('Are you sure you want to delete this event?')) return;
     try {
-      const response = await fetch(`http://localhost:8001/api/admin/events/${eventId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/events/${eventId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
@@ -1687,7 +1690,7 @@ Living Hope AG Team`;
     e.preventDefault();
     if (!adminToken) return;
     try {
-      const response = await fetch(`http://localhost:8001/api/admin/events/${editingEvent}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/events/${editingEvent}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1714,7 +1717,7 @@ Living Hope AG Team`;
   const fetchAdminAnnouncements = async () => {
     if (!adminToken) return;
     try {
-      const response = await fetch('http://localhost:8001/api/admin/announcements', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/announcements`, {
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
       if (response.ok) {
@@ -1730,7 +1733,7 @@ Living Hope AG Team`;
     e.preventDefault();
     if (!adminToken) return;
     try {
-      const response = await fetch('http://localhost:8001/api/admin/announcements', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/announcements`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1756,7 +1759,7 @@ Living Hope AG Team`;
   const deleteAnnouncement = async (announcementId) => {
     if (!adminToken || !confirm('Are you sure you want to delete this announcement?')) return;
     try {
-      const response = await fetch(`http://localhost:8001/api/admin/announcements/${announcementId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/announcements/${announcementId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
@@ -1798,7 +1801,7 @@ Living Hope AG Team`;
     e.preventDefault();
     if (!adminToken) return;
     try {
-      const response = await fetch(`http://localhost:8001/api/admin/announcements/${editingAnnouncement}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/announcements/${editingAnnouncement}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -2346,7 +2349,7 @@ Living Hope AG Team`;
     useEffect(() => {
       const fetchEventDetail = async () => {
         try {
-          const response = await fetch(`http://localhost:8001/api/events/${eventId}`);
+          const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`);
           if (response.ok) {
             const data = await response.json();
             setEventDetail(data);
