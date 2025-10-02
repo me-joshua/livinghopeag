@@ -48,12 +48,11 @@ __pycache__/
 env/
 venv/
 
-# Database files (allow livinghope.db but exclude others)
+# Database files (SECURITY: Never commit database files with sensitive data!)
 *.db
-!backend/livinghope.db
 *.sqlite
-!backend/livinghope.db
 *.sqlite3
+backend/livinghope.db
 
 # Temporary and backup files
 *.tmp
