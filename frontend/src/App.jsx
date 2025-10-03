@@ -452,15 +452,15 @@ const EventDetailPage = () => {
   const categoryInfo = EVENT_CATEGORY_OPTIONS.find(cat => cat.value === eventDetail.category);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-16">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-gray-50 py-4 md:py-8 lg:py-16">
+      <div className="max-w-4xl mx-auto px-4 md:px-6 lg:px-8">
         {/* Header with back button */}
-        <div className="mb-8">
+        <div className="mb-4 md:mb-8">
           <button
             onClick={() => navigate('/events')}
-            className="flex items-center text-blue-600 hover:text-blue-700 mb-4 transition-colors duration-200 py-3 px-3 rounded-lg hover:bg-blue-50 min-h-[44px]"
+            className="flex items-center text-blue-600 hover:text-blue-700 mb-4 transition-colors duration-200 py-3 px-3 rounded-lg hover:bg-blue-50 min-h-[44px] text-sm md:text-base"
           >
-            <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-4 w-4 md:h-5 md:w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back to Events
@@ -468,48 +468,78 @@ const EventDetailPage = () => {
         </div>
 
         {/* Event Header */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
-          <div className="w-full h-64 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-4 md:mb-8">
+          <div className="w-full h-48 md:h-56 lg:h-64 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
             <div className="text-center text-white">
-              <Calendar className="h-16 w-16 mx-auto mb-4" />
-              <p className="text-lg font-bold tracking-wide drop-shadow-lg">Event Image</p>
+              <Calendar className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-2 md:mb-4" />
+              <p className="text-base md:text-lg font-bold tracking-wide drop-shadow-lg">Event Image</p>
             </div>
           </div>
           
-          <div className="p-8">
-            <div className="flex items-center mb-4">
+          <div className="p-4 md:p-6 lg:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center mb-4 gap-2">
               {categoryInfo && (
-                <span className="inline-flex items-center text-sm font-semibold px-3 py-1 rounded-full bg-blue-100 text-blue-800 mr-4">
+                <span className="inline-flex items-center text-xs md:text-sm font-semibold px-3 py-1 rounded-full bg-blue-100 text-blue-800 self-start">
                   {categoryInfo.icon}
                   <span className="ml-2">{categoryInfo.label}</span>
                 </span>
               )}
-              <span className="text-sm text-gray-500">
-                <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold shadow-md text-base">
-                  <Calendar className="h-5 w-5 mr-2" />
+              <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold shadow-md text-xs md:text-sm lg:text-base self-start">
+                <Calendar className="h-4 w-4 md:h-5 md:w-5 mr-2 flex-shrink-0" />
+                <span className="min-w-0 block min-[400px]:hidden">
+                  {eventDate.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                  })} {eventDate.getFullYear()}
+                </span>
+                <span className="min-w-0 hidden min-[400px]:block min-[580px]:hidden">
+                  {eventDate.toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </span>
+                <span className="min-w-0 hidden min-[580px]:block">
                   {eventDate.toLocaleDateString('en-US', {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
                   })}
-                  <span className="mx-2">|</span>
-                  <Clock className="h-5 w-5 mr-2" />
-                  {eventDetail.time}
                 </span>
+                <span className="mx-2">|</span>
+                <Clock className="h-4 w-4 md:h-5 md:w-5 mr-2 flex-shrink-0" />
+                <span>{eventDetail.time}</span>
               </span>
             </div>
             
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">{eventDetail.title}</h1>
-            <p className="text-lg text-gray-600 leading-relaxed">{eventDetail.description}</p>
+            <h1 
+              className="font-bold text-gray-800 mb-4 leading-tight"
+              style={{
+                fontSize: 'clamp(1.5rem, 5vw + 0.5rem, 2.5rem)'
+              }}
+            >
+              {eventDetail.title}
+            </h1>
+            <p className="text-sm md:text-base lg:text-lg text-gray-600 leading-relaxed">{eventDetail.description}</p>
+            
+            {eventDetail.registration_required && !isPastEvent && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 md:p-4 mt-4 md:mt-6">
+                <h3 className="font-semibold text-yellow-800 mb-2 text-sm md:text-base">Registration Required</h3>
+                {eventDetail.contact_info && (
+                  <p className="text-yellow-700 text-sm md:text-base">{eventDetail.contact_info}</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Location Section - Only show for upcoming events */}
         {eventDetail.location && !isPastEvent && (
-          <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-              <MapPin className="h-6 w-6 mr-2 text-blue-600" />
+          <div className="bg-white rounded-lg shadow-lg p-4 md:p-6 lg:p-8 mb-4 md:mb-8">
+            <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <MapPin className="h-5 w-5 md:h-6 md:w-6 mr-2 text-blue-600 flex-shrink-0" />
               Location
             </h2>
             
@@ -518,18 +548,18 @@ const EventDetailPage = () => {
               const isMapUrl = eventDetail.location.includes('google.com/maps') || eventDetail.location.includes('maps.google.com') || /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/.test(eventDetail.location);
               
               return isMapUrl ? (
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                   <a
                     href={eventDetail.location.includes('http') ? eventDetail.location : `https://maps.google.com/?q=${encodeURIComponent(eventDetail.location)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center text-blue-600 hover:text-blue-700 transition-colors duration-200"
+                    className="inline-flex items-center text-blue-600 hover:text-blue-700 transition-colors duration-200 text-sm md:text-base py-2"
                   >
-                    <ExternalLink className="h-4 w-4 mr-2" />
+                    <ExternalLink className="h-4 w-4 mr-2 flex-shrink-0" />
                     View on Google Maps
                   </a>
                   
-                  <div className="w-full h-64 border border-gray-300 rounded-lg overflow-hidden">
+                  <div className="w-full h-48 md:h-56 lg:h-64 border border-gray-300 rounded-lg overflow-hidden">
                     <iframe
                       src={embedUrl}
                       width="100%"
@@ -543,42 +573,42 @@ const EventDetailPage = () => {
                   </div>
                 </div>
               ) : (
-                <p className="text-gray-600">{eventDetail.location}</p>
+                <p className="text-gray-600 text-sm md:text-base break-words">{eventDetail.location}</p>
               );
             })()}
           </div>
         )}
 
         {/* Gallery Section */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-            <Image className="h-6 w-6 mr-2 text-blue-600" />
+        <div className="bg-white rounded-lg shadow-lg p-4 md:p-6 lg:p-8 mb-4 md:mb-8">
+          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800 mb-4 flex items-center">
+            <Image className="h-5 w-5 md:h-6 md:w-6 mr-2 text-blue-600 flex-shrink-0" />
             Event Gallery
           </h2>
           
           {isPastEvent ? (
-            <div className="text-center py-12">
-              <Image className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-600 text-lg">Gallery photos are being processed.</p>
-              <p className="text-gray-500 mt-2">Photos from this event will be available soon!</p>
+            <div className="text-center py-8 md:py-12">
+              <Image className="h-10 w-10 md:h-12 md:w-12 lg:h-16 lg:w-16 mx-auto mb-4 text-gray-400" />
+              <p className="text-gray-600 text-sm md:text-base lg:text-lg">Gallery photos are being processed.</p>
+              <p className="text-gray-500 mt-2 text-xs md:text-sm">Photos from this event will be available soon!</p>
             </div>
           ) : (
-            <div className="text-center py-12">
-              <Clock className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-600 text-lg">Check back after the event!</p>
-              <p className="text-gray-500 mt-2">Photos will be available once the event is completed.</p>
+            <div className="text-center py-8 md:py-12">
+              <Clock className="h-10 w-10 md:h-12 md:w-12 lg:h-16 lg:w-16 mx-auto mb-4 text-gray-400" />
+              <p className="text-gray-600 text-sm md:text-base lg:text-lg">Check back after the event!</p>
+              <p className="text-gray-500 mt-2 text-xs md:text-sm">Photos will be available once the event is completed.</p>
             </div>
           )}
         </div>
 
         {/* Contact Information */}
         {eventDetail.contact_info && !isPastEvent && (
-          <div className="bg-white rounded-lg shadow-lg p-8 mt-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-              <Phone className="h-6 w-6 mr-2 text-blue-600" />
+          <div className="bg-white rounded-lg shadow-lg p-4 md:p-6 lg:p-8">
+            <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <Phone className="h-5 w-5 md:h-6 md:w-6 mr-2 text-blue-600 flex-shrink-0" />
               Contact Information
             </h2>
-            <p className="text-gray-600">{eventDetail.contact_info}</p>
+            <p className="text-gray-600 text-sm md:text-base break-words">{eventDetail.contact_info}</p>
           </div>
         )}
       </div>
