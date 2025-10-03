@@ -454,7 +454,7 @@ const EventDetailPage = () => {
         <div className="mb-8">
           <button
             onClick={() => navigate('/events')}
-            className="flex items-center text-blue-600 hover:text-blue-700 mb-4 transition-colors duration-200"
+            className="flex items-center text-blue-600 hover:text-blue-700 mb-4 transition-colors duration-200 py-3 px-3 rounded-lg hover:bg-blue-50 min-h-[44px]"
           >
             <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -591,6 +591,7 @@ const AppContent = () => {
   const [nextImageIndex, setNextImageIndex] = useState(1);
   const [showNext, setShowNext] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -1899,7 +1900,7 @@ Living Hope AG Team`;
               
             </div>
             <div className="flex flex-col items-center">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full text-base btn-primary btn-ripple scale-hover flex items-center mb-2">
+              <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 md:py-3 md:px-6 rounded-full text-base btn-primary btn-ripple scale-hover flex items-center mb-2 min-h-[48px]">
                 Join Our Service Online <Sparkles className="ml-2 h-4 w-4" />
               </button>
               <p className="text-sm opacity-75 italic">Coming Soon</p>
@@ -1928,7 +1929,7 @@ Living Hope AG Team`;
       <div className="bg-gray-50 py-16 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-800 fade-in">
+            <h2 className="text-2xl md:text-4xl font-bold text-gray-800 fade-in">
               Latest Announcements
             </h2>
             {announcements.length > 0 && (
@@ -1948,7 +1949,7 @@ Living Hope AG Team`;
               <div className="text-gray-400 mb-6">
                 <Megaphone className="h-16 w-16 mx-auto mb-4 opacity-50" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-600 mb-4">No Announcements Yet</h3>
+              <h3 className="text-lg md:text-2xl font-semibold text-gray-600 mb-4">No Announcements Yet</h3>
               <p className="text-gray-500 text-lg max-w-md mx-auto">
                 Check back soon for the latest updates and announcements from Living Hope AG.
               </p>
@@ -1968,7 +1969,7 @@ Living Hope AG Team`;
                         NEW
                       </div>
                     )}
-                    <div className={`text-3xl mb-4 icon-float ${iconColor}`}>
+                    <div className={`text-2xl md:text-3xl mb-4 icon-float ${iconColor}`}>
                       <IconComponent className="h-8 w-8" />
                     </div>
                     <h3 className="text-xl font-semibold mb-3">{announcement.title}</h3>
@@ -2017,15 +2018,15 @@ Living Hope AG Team`;
   };
 
   const renderSermons = () => (
-    <div className="min-h-screen bg-gray-50 py-16">
-      <div className="max-w-7xl mx-auto px-4">
-        <h2 className="text-4xl font-bold text-center mb-12 text-gray-800 fade-in">
+    <div className="min-h-screen bg-gray-50 py-8 md:py-16">
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
+        <h2 className="text-2xl md:text-4xl font-bold text-center mb-6 md:mb-12 text-gray-800 fade-in">
           Latest Media
         </h2>
         {sermons.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-6xl mb-4 opacity-50"><BookOpen className="h-16 w-16 mx-auto" /></div>
-            <h3 className="text-2xl font-semibold text-gray-600 mb-2">No Media Available</h3>
+            <div className="text-4xl md:text-6xl mb-4 opacity-50"><BookOpen className="h-12 w-12 md:h-16 md:w-16 mx-auto" /></div>
+            <h3 className="text-lg md:text-2xl font-semibold text-gray-600 mb-2">No Media Available</h3>
             <p className="text-gray-500">Check back soon for new videos and content!</p>
           </div>
         ) : (
@@ -2106,13 +2107,13 @@ Living Hope AG Team`;
   );
 
   const renderAnnouncements = () => (
-    <div className="min-h-screen bg-gray-50 py-16">
-      <div className="max-w-7xl mx-auto px-4">
+    <div className="min-h-screen bg-gray-50 py-8 md:py-16">
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="text-center mb-12 fade-in">
-          <h2 className="text-4xl font-bold mb-6 text-gray-800">
+          <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6 text-gray-800">
             Church Announcements
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
             Stay updated with the latest news and announcements from Living Hope AG
           </p>
         </div>
@@ -2164,18 +2165,18 @@ Living Hope AG Team`;
   );
 
   const renderAbout = () => (
-    <div className="min-h-screen bg-white py-16">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-16 fade-in">
-          <h2 className="text-4xl font-bold mb-6 text-gray-800">
+    <div className="min-h-screen bg-white py-8 md:py-16">
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
+        <div className="text-center mb-8 md:mb-16 fade-in">
+          <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6 text-gray-800">
             About Living Hope AG
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
             We are a community of believers passionate about experiencing and sharing the life-changing love of Jesus Christ.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+        <div className="grid lg:grid-cols-2 gap-6 md:gap-12 items-center mb-8 md:mb-16">
           <div className="slide-in-left">
             <img
               src="https://images.unsplash.com/photo-1695938746747-ec185ea81325"
@@ -2184,7 +2185,7 @@ Living Hope AG Team`;
             />
           </div>
           <div className="slide-in-right">
-            <h3 className="text-3xl font-bold mb-6 text-gray-800">Life at Living Hope AG</h3>
+            <h3 className="text-xl md:text-3xl font-bold mb-4 md:mb-6 text-gray-800">Life at Living Hope AG</h3>
             <p className="text-gray-600 mb-6 text-lg">
               At Living Hope AG, we believe in creating a warm, welcoming environment where everyone can grow in their relationship with God. Our community is built on love, acceptance, and the transformative power of Christ's message.
             </p>
@@ -2196,15 +2197,15 @@ Living Hope AG Team`;
 
         <div className="grid md:grid-cols-3 gap-8">
           <div className="bg-blue-50 rounded-lg p-8 text-center card-hover stagger-animation">
-            <div className="text-4xl mb-4 icon-float"><Users className="h-10 w-10" /></div>
-            <h3 className="text-2xl font-bold mb-4 text-gray-800">Kid's Meeting</h3>
+            <div className="text-2xl md:text-4xl mb-4 icon-float"><Users className="h-8 w-8 md:h-10 md:w-10" /></div>
+            <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-4 text-gray-800">Kid's Meeting</h3>
             <p className="text-gray-600">
               Every Sunday, we host special programs for children aged 3-12. Our kids enjoy interactive Bible stories, music, games, and activities that help them learn about God's love in age-appropriate ways.
             </p>
           </div>
 
           <div className="bg-purple-50 rounded-lg p-8 text-center card-hover stagger-animation">
-            <div className="text-4xl mb-4 icon-float"><Moon className="h-10 w-10" /></div>
+            <div className="text-2xl md:text-4xl mb-4 icon-float"><Moon className="h-8 w-8 md:h-10 md:w-10" /></div>
             <h3 className="text-2xl font-bold mb-4 text-gray-800">All Night Meeting</h3>
             <p className="text-gray-600">
               Once a month, we gather for powerful overnight prayer and worship sessions. These special services run from 10 PM to 6 AM, featuring extended worship, prayer, testimonies, and seeking God's presence together.
@@ -2224,8 +2225,8 @@ Living Hope AG Team`;
   );
 
   const renderEvents = () => (
-    <div className="min-h-screen bg-gray-50 py-16">
-      <div className="max-w-7xl mx-auto px-4">
+    <div className="min-h-screen bg-gray-50 py-8 md:py-16">
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
         <h2 className="text-4xl font-bold text-center mb-12 text-gray-800 fade-in">
           Events
         </h2>
@@ -2562,7 +2563,7 @@ Living Hope AG Team`;
               <div className="bg-white p-4 rounded-lg border card-hover">
                 <h4 className="font-semibold mb-2">Online Giving</h4>
                 <p className="text-sm text-gray-600 mb-3">Secure online giving through our payment processor</p>
-                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded btn-primary btn-ripple flex items-center justify-center">
+                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 md:py-2 md:px-4 rounded btn-primary btn-ripple flex items-center justify-center min-h-[48px]">
                   Give Online <Sparkles className="ml-2 h-4 w-4" />
                 </button>
               </div>
@@ -4089,15 +4090,47 @@ Living Hope AG Team`;
               ))}
             </div>
             <div className="md:hidden">
-              <button className="text-gray-700 hover:text-blue-600 icon-hover">
+              <button 
+                className="text-gray-700 hover:text-blue-600 icon-hover p-2"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label="Toggle mobile menu"
+              >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} 
+                  />
                 </svg>
               </button>
             </div>
           </div>
         </div>
       </nav>
+
+      {/* Mobile Menu */}
+      <div className={`md:hidden bg-white shadow-lg transition-all duration-300 ease-in-out ${
+        mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+      }`}>
+        <div className="px-4 py-2 space-y-1">
+          {navigation.map((item) => (
+            <Link
+              key={item.id}
+              to={item.id === 'home' ? '/' : `/${item.id}`}
+              className={`flex items-center px-3 py-3 rounded-md text-base font-medium transition-all duration-200 ${
+                (location.pathname === '/' && item.id === 'home') || location.pathname === `/${item.id}`
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <item.icon className="mr-3 h-5 w-5" />
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      </div>
 
       {/* Main Content */}
       <main className="section-enter">
