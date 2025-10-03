@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import './App.css';
+
+// API Base URL - use environment variable or fallback to localhost
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8001';
+
 import { 
   Home, 
   BookOpen, 
@@ -584,9 +588,6 @@ const EventDetailPage = () => {
 
 // Main component that will contain all the routing logic
 const AppContent = () => {
-  // API Base URL - use environment variable or fallback to localhost
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8001';
-  
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [nextImageIndex, setNextImageIndex] = useState(1);
   const [showNext, setShowNext] = useState(false);
@@ -2356,193 +2357,6 @@ Living Hope AG Team`;
     </div>
   );
 
-  // Event Detail Page
-  const renderEventDetail = () => {
-    const { eventId } = useParams();
-    const navigate = useNavigate();
-    const [eventDetail, setEventDetail] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-      const fetchEventDetail = async () => {
-        try {
-          const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`);
-          if (response.ok) {
-            const data = await response.json();
-            setEventDetail(data);
-          } else {
-            setError('Event not found');
-          }
-        } catch (error) {
-          console.error('Failed to fetch event details:', error);
-          setError('Failed to load event details');
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      if (eventId) {
-        fetchEventDetail();
-      }
-    }, [eventId]);
-
-    if (loading) {
-      return (
-        <div className="min-h-screen bg-white py-16 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading event details...</p>
-          </div>
-        </div>
-      );
-    }
-
-    if (error || !eventDetail) {
-      return (
-        <div className="min-h-screen bg-white py-16 flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Event Not Found</h2>
-            <p className="text-gray-600 mb-6">{error || 'The event you are looking for does not exist.'}</p>
-            <button
-              onClick={() => navigate('/events')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200"
-            >
-              Back to Events
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    const eventDate = new Date(eventDetail.date);
-    const currentDate = new Date();
-    const isEventPast = eventDate < currentDate;
-    const categoryInfo = EVENT_CATEGORY_OPTIONS.find(cat => cat.value === eventDetail.category);
-
-    return (
-      <div className="min-h-screen bg-white py-16">
-        <div className="max-w-4xl mx-auto px-4">
-          {/* Back Button */}
-          <button
-            onClick={() => navigate('/events')}
-            className="mb-6 flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200"
-          >
-            <ChevronDown className="h-4 w-4 mr-2 rotate-90" />
-            Back to Events
-          </button>
-
-          {/* Event Header */}
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
-            <div className="w-full h-64 bg-gray-200 flex items-center justify-center">
-              <div className="text-center text-gray-500">
-                <Calendar className="h-16 w-16 mx-auto mb-4" />
-                <p className="text-lg">Event Image</p>
-              </div>
-            </div>
-            
-            <div className="p-8">
-              <div className="flex items-center mb-4">
-                {categoryInfo && (
-                  <span className="flex items-center text-sm font-semibold px-3 py-1 rounded-full bg-blue-100 text-blue-800 mr-4">
-                    {categoryInfo.icon}
-                    <span className="ml-2">{categoryInfo.label}</span>
-                  </span>
-                )}
-                <span className="text-lg text-gray-600">
-                  {eventDate.toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })} at {eventDetail.time}
-                </span>
-              </div>
-              
-              <h1 className="text-4xl font-bold text-gray-800 mb-4">{eventDetail.title}</h1>
-              <p className="text-xl text-gray-600 leading-relaxed">{eventDetail.description}</p>
-              
-              {eventDetail.registration_required && !isEventPast && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
-                  <h3 className="font-semibold text-yellow-800 mb-2">Registration Required</h3>
-                  {eventDetail.contact_info && (
-                    <p className="text-yellow-700">{eventDetail.contact_info}</p>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Location Section */}
-          {eventDetail.location && !isEventPast && (
-            <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                <MapPin className="h-6 w-6 mr-2" />
-                Location
-              </h2>
-              {(() => {
-                const embedUrl = convertToGoogleMapsEmbed(eventDetail.location);
-                const isMapUrl = eventDetail.location.includes('google.com/maps') || eventDetail.location.includes('maps.google.com') || /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/.test(eventDetail.location);
-                
-                return isMapUrl ? (
-                  <div>
-                    <iframe
-                      src={embedUrl}
-                      width="100%"
-                      height="300"
-                      style={{ border: 0 }}
-                      allowFullScreen=""
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      className="rounded-lg"
-                    ></iframe>
-                    <a
-                      href={eventDetail.location.includes('http') ? eventDetail.location : `https://maps.google.com/?q=${encodeURIComponent(eventDetail.location)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center mt-4 text-blue-600 hover:text-blue-800 transition-colors duration-200"
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Open in Google Maps
-                    </a>
-                  </div>
-                ) : (
-                  <p className="text-gray-600">{eventDetail.location}</p>
-                );
-              })()}
-            </div>
-          )}
-
-          {/* Gallery Section */}
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-              <Eye className="h-6 w-6 mr-2" />
-              Event Gallery
-            </h2>
-            
-            {!isEventPast ? (
-              <div className="text-center py-12 bg-gray-50 rounded-lg">
-                <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">Gallery Coming Soon</h3>
-                <p className="text-gray-500">
-                  Check back after the event to see photos and highlights from this gathering.
-                </p>
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-gray-50 rounded-lg">
-                <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">Gallery Not Available</h3>
-                <p className="text-gray-500">
-                  Photos from this event are not yet available. Please check back later or contact us if you have questions.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const renderGive = () => (
     <div className="min-h-screen bg-white py-16">
       <div className="max-w-4xl mx-auto px-4">
@@ -4089,28 +3903,40 @@ Living Hope AG Team`;
     <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
       <nav className="bg-white shadow-lg sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-lg lg:text-2xl font-bold text-blue-600 text-glow flex items-center"><Church className="mr-2 h-5 w-5 lg:h-6 lg:w-6" /> Living Hope AG</h1>
+        <div className="w-full px-4 lg:px-6 xl:px-8">
+          <div className="flex justify-between items-center h-14 md:h-16">
+            <div className="flex items-center flex-shrink-0">
+              <Link 
+                to="/" 
+                className="font-bold text-blue-600 text-glow flex items-center whitespace-nowrap hover:text-blue-700 transition-colors duration-200" 
+                style={{
+                  fontSize: 'clamp(1rem, 1.8vw + 0.3rem, 1.25rem)'
+                }}
+              >
+                <Church className="mr-1.5" style={{
+                  width: 'clamp(1rem, 1.5vw + 0.3rem, 1.25rem)',
+                  height: 'clamp(1rem, 1.5vw + 0.3rem, 1.25rem)'
+                }} /> 
+                Living Hope AG
+              </Link>
             </div>
-            <div className="hidden lg:flex space-x-8">
+            <div className="hidden md:flex space-x-2 lg:space-x-4 xl:space-x-6">
               {navigation.map((item) => (
                 <Link
                   key={item.id}
                   to={item.id === 'home' ? '/' : `/${item.id}`}
-                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 nav-item ${
+                  className={`flex items-center px-2 py-1.5 lg:px-3 lg:py-2 rounded-md text-xs lg:text-sm font-medium transition-all duration-300 nav-item whitespace-nowrap ${
                     (location.pathname === '/' && item.id === 'home') || location.pathname === `/${item.id}`
                       ? 'bg-blue-600 text-white subtle-glow'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  <item.icon className="mr-2 h-4 w-4" />
+                  <item.icon className="mr-1 lg:mr-2 h-3 w-3 lg:h-4 lg:w-4" />
                   {item.label}
                 </Link>
               ))}
             </div>
-            <div className="lg:hidden">
+            <div className="md:hidden">
               <button 
                 className="text-gray-700 hover:text-blue-600 icon-hover p-2"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -4131,7 +3957,7 @@ Living Hope AG Team`;
       </nav>
 
       {/* Mobile Menu Overlay */}
-      <div className={`lg:hidden fixed inset-0 z-50 transition-all duration-300 ${
+      <div className={`md:hidden fixed inset-0 z-50 transition-all duration-300 ${
         mobileMenuOpen ? 'visible opacity-100' : 'invisible opacity-0'
       }`}>
         {/* Background overlay */}
