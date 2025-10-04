@@ -1,4 +1,4 @@
-const { handleCors, sendSuccess, sendError } = require('./utils');
+const { handleCors, sendSuccess, sendError, parseRequestBody } = require('./utils');
 const { db } = require('./database');
 
 module.exports = async function handler(req, res) {
@@ -9,7 +9,13 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      const { username, email, password } = req.body;
+      const body = parseRequestBody(req);
+      
+      if (!body) {
+        return sendError(res, 'Invalid JSON body', 400);
+      }
+      
+      const { username, email, password } = body;
       
       if (!username || !email || !password) {
         return sendError(res, 'Missing required fields: username, email, password', 400);
