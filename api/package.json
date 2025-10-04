@@ -1,0 +1,32 @@
+{
+  "name": "livinghopeag-api",
+  "version": "1.0.0",
+  "description": "Living Hope AG API - Node.js Serverless Functions",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0",
+    "@vercel/node": "^2.3.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^3.3.2",
+    "uuid": "^9.0.1"
+  },
+  "overrides": {
+    "node-fetch": "^3.3.2",
+    "path-to-regexp": "^7.0.0",
+    "esbuild": "^0.24.3"
+  },
+  "keywords": [
+    "api",
+    "serverless",
+    "vercel",
+    "supabase",
+    "church"
+  ],
+  "author": "Living Hope AG",
+  "license": "MIT"
+}
