@@ -42,7 +42,18 @@ import {
   Instagram,
   Facebook,
   Image,
-  Edit
+  Edit,
+  CreditCard,
+  Building,
+  Copy,
+  Wallet,
+  FileText,
+  Gift,
+  Target,
+  Globe,
+  Quote,
+  CheckCircle,
+  ArrowRight
 } from 'lucide-react';
 
 // Comprehensive list of countries with phone codes (sorted alphabetically)
@@ -657,6 +668,7 @@ const AppContent = () => {
 
   // Admin panel state
   const [adminToken, setAdminToken] = useState(localStorage.getItem('adminToken'));
+  const [adminLoginLoading, setAdminLoginLoading] = useState(false);
   const [adminCredentials, setAdminCredentials] = useState({
     username: '',
     password: ''
@@ -1320,6 +1332,7 @@ const AppContent = () => {
   const handleAdminLogin = async (e) => {
     e.preventDefault();
     setAuthError(''); // Clear any previous errors
+    setAdminLoginLoading(true); // Start loading
     
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
@@ -1372,6 +1385,8 @@ const AppContent = () => {
     } catch (error) {
       console.error('Login error:', error);
       setAuthError('Unable to connect to server. Please check your internet connection and try again.');
+    } finally {
+      setAdminLoginLoading(false); // Stop loading in all cases
     }
   };
 
@@ -2209,61 +2224,110 @@ Living Hope AG Team`;
   );
 
   const renderAbout = () => (
-    <div className="min-h-screen bg-white py-8 md:py-16">
-      <div className="max-w-7xl mx-auto px-4 md:px-6">
-        <div className="text-center mb-8 md:mb-16 fade-in">
-          <h2 className="font-bold mb-4 md:mb-6 text-gray-800" style={{
-            fontSize: 'clamp(1.25rem, 4vw + 0.5rem, 2.5rem)'
-          }}>
+    <div className="min-h-screen bg-white py-8 md:py-12 lg:py-16">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        <div className="text-center mb-8 md:mb-12 lg:mb-16 fade-in">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-800 leading-tight">
             About Living Hope AG
           </h2>
-          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed px-2">
             We are a community of believers passionate about experiencing and sharing the life-changing love of Jesus Christ.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6 md:gap-12 items-center mb-8 md:mb-16">
-          <div className="slide-in-left">
+        <div className="grid lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12 items-center mb-8 md:mb-12 lg:mb-16">
+          <div className="slide-in-left order-2 lg:order-1">
             <img
               src="https://images.unsplash.com/photo-1695938746747-ec185ea81325"
               alt="Church Community"
-              className="rounded-lg shadow-lg w-full h-96 object-cover img-transition"
+              className="rounded-xl shadow-lg w-full h-64 sm:h-80 md:h-96 object-cover img-transition"
             />
           </div>
-          <div className="slide-in-right">
-            <h3 className="text-lg md:text-2xl font-bold mb-3 md:mb-4 text-gray-800">Life at Living Hope AG</h3>
-            <p className="text-gray-600 mb-6 text-lg">
-              At Living Hope AG, we believe in creating a warm, welcoming environment where everyone can grow in their relationship with God. Our community is built on love, acceptance, and the transformative power of Christ's message.
-            </p>
-            <p className="text-gray-600 mb-6 text-lg">
-              We offer various programs and services designed to help you connect with God and with others in our faith community. Whether you're seeking spiritual growth, community connection, or simply exploring faith, you'll find a place here.
-            </p>
+          <div className="slide-in-right order-1 lg:order-2">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 md:p-8">
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-gray-800 flex items-center">
+                <Heart className="h-6 w-6 sm:h-7 sm:w-7 text-blue-600 mr-3" />
+                Life at Living Hope AG
+              </h3>
+              <p className="text-gray-600 mb-4 md:mb-6 text-sm sm:text-base md:text-lg leading-relaxed">
+                At Living Hope AG, we believe in creating a warm, welcoming environment where everyone can grow in their relationship with God. Our community is built on love, acceptance, and the transformative power of Christ's message.
+              </p>
+              <p className="text-gray-600 mb-4 md:mb-6 text-sm sm:text-base md:text-lg leading-relaxed">
+                We offer various programs and services designed to help you connect with God and with others in our faith community. Whether you're seeking spiritual growth, community connection, or simply exploring faith, you'll find a place here.
+              </p>
+              <div className="bg-blue-50 p-4 md:p-6 rounded-xl border-l-4 border-blue-500">
+                <p className="text-blue-800 text-sm sm:text-base font-medium italic">
+                  "Come as you are, and discover the hope that changes everything."
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="bg-blue-50 rounded-lg p-8 text-center card-hover stagger-animation">
-            <div className="text-2xl md:text-4xl mb-4 icon-float"><Users className="h-8 w-8 md:h-10 md:w-10" /></div>
-            <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-4 text-gray-800">Kid's Meeting</h3>
-            <p className="text-gray-600">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 sm:p-6 md:p-8 text-center card-hover stagger-animation border border-blue-200">
+            <div className="text-blue-600 mb-3 md:mb-4 icon-float flex justify-center">
+              <Users className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12" />
+            </div>
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 md:mb-4 text-gray-800">Kid's Meeting</h3>
+            <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
               Every Sunday, we host special programs for children aged 3-12. Our kids enjoy interactive Bible stories, music, games, and activities that help them learn about God's love in age-appropriate ways.
             </p>
+            <div className="mt-4 inline-flex items-center text-blue-600 font-semibold text-sm">
+              <Clock className="h-4 w-4 mr-2" />
+              Sundays 3:00 PM
+            </div>
           </div>
 
-          <div className="bg-purple-50 rounded-lg p-8 text-center card-hover stagger-animation">
-            <div className="text-2xl md:text-4xl mb-4 icon-float"><Moon className="h-8 w-8 md:h-10 md:w-10" /></div>
-            <h3 className="text-2xl font-bold mb-4 text-gray-800">All Night Meeting</h3>
-            <p className="text-gray-600">
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 sm:p-6 md:p-8 text-center card-hover stagger-animation border border-purple-200">
+            <div className="text-purple-600 mb-3 md:mb-4 icon-float flex justify-center">
+              <Moon className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12" />
+            </div>
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 md:mb-4 text-gray-800">All Night Meeting</h3>
+            <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
               Once a month, we gather for powerful overnight prayer and worship sessions. These special services run from 10 PM to 6 AM, featuring extended worship, prayer, testimonies, and seeking God's presence together.
             </p>
+            <div className="mt-4 inline-flex items-center text-purple-600 font-semibold text-sm">
+              <Calendar className="h-4 w-4 mr-2" />
+              Last Friday Monthly
+            </div>
           </div>
 
-          <div className="bg-green-50 rounded-lg p-8 text-center card-hover stagger-animation">
-            <div className="text-4xl mb-4 icon-float"><Star className="h-10 w-10" /></div>
-            <h3 className="text-2xl font-bold mb-4 text-gray-800">Living Hope Experience</h3>
-            <p className="text-gray-600">
+          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 sm:p-6 md:p-8 text-center card-hover stagger-animation border border-green-200 sm:col-span-2 lg:col-span-1">
+            <div className="text-green-600 mb-3 md:mb-4 icon-float flex justify-center">
+              <Star className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12" />
+            </div>
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 md:mb-4 text-gray-800">Living Hope Experience</h3>
+            <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
               Our church name comes from the hope we have in Jesus Christ - the eternal life and future He offers. We strive to help every person discover this life-giving relationship with Christ that satisfies the deepest longings of the soul.
             </p>
+            <div className="mt-4 inline-flex items-center text-green-600 font-semibold text-sm">
+              <Heart className="h-4 w-4 mr-2" />
+              Life-Changing Hope
+            </div>
+          </div>
+        </div>
+
+        {/* Our Values Section */}
+        <div className="mt-12 md:mt-16 lg:mt-20">
+          <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 text-gray-800 fade-in">
+            Our Core Values
+          </h3>
+          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
+            {[
+              { icon: Heart, title: "Love", description: "We show Christ's love to everyone we meet", color: "red" },
+              { icon: Users, title: "Community", description: "We build meaningful relationships together", color: "blue" },
+              { icon: BookOpen, title: "Truth", description: "We base our lives on God's Word", color: "green" },
+              { icon: Globe, title: "Mission", description: "We share the Gospel with our community", color: "purple" }
+            ].map((value, index) => (
+              <div key={index} className={`bg-${value.color}-50 rounded-xl p-4 sm:p-6 text-center border border-${value.color}-200 stagger-animation card-hover`}>
+                <div className={`text-${value.color}-600 mb-3 flex justify-center`}>
+                  <value.icon className="h-6 w-6 sm:h-8 sm:w-8" />
+                </div>
+                <h4 className={`text-lg sm:text-xl font-bold mb-2 text-${value.color}-800`}>{value.title}</h4>
+                <p className="text-gray-700 text-sm sm:text-base leading-relaxed">{value.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -2388,64 +2452,131 @@ Living Hope AG Team`;
   );
 
   const renderGive = () => (
-    <div className="min-h-screen bg-white py-16">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="text-center mb-12 fade-in">
-          <h2 className="text-4xl font-bold mb-6 text-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 md:py-12 lg:py-16">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        {/* Hero Section */}
+        <div className="text-center mb-8 md:mb-12 lg:mb-16 fade-in">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4 lg:mb-6 text-gray-800 leading-tight px-2">
             Support Our Ministry
-          </h2>
-          <p className="text-xl text-gray-600">
-            Your generous giving helps us continue spreading the Gospel and serving our community.
+          </h1>
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed px-4">
+            Your generous giving helps us continue spreading the Gospel, serving our community, and making a lasting impact in Oman.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 mb-12">
-          <div className="bg-blue-50 rounded-lg p-8 card-hover slide-in-left">
-            <h3 className="text-2xl font-bold mb-4 text-gray-800">Where Your Giving Goes</h3>
-            <ul className="space-y-3 text-gray-600">
-              {[
-                "Supporting local community outreach programs",
-                "Maintaining and improving our worship facilities",
-                "Funding children's and youth ministry programs",
-                "Supporting mission work and evangelism",
-                "Providing assistance to families in need"
-              ].map((item, index) => (
-                <li key={index} className="flex items-center stagger-animation">
-                  <span className="text-blue-600 mr-3">•</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="bg-gray-50 rounded-lg p-8 card-hover slide-in-right">
-            <h3 className="text-2xl font-bold mb-4 text-gray-800">Ways to Give</h3>
-            <div className="space-y-4">
-              <div className="bg-white p-4 rounded-lg border card-hover">
-                <h4 className="font-semibold mb-2">Online Giving</h4>
-                <p className="text-sm text-gray-600 mb-3">Secure online giving through our payment processor</p>
-                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 md:py-2 md:px-4 rounded btn-primary btn-ripple flex items-center justify-center min-h-[48px] text-sm md:text-base">
-                  Give Online <Sparkles className="ml-2 h-4 w-4" />
-                </button>
+        {/* Main Content Grid */}
+        <div className="space-y-6 md:space-y-8 mb-8 md:mb-12 lg:mb-16">
+          {/* Ways to Give - Now at the top, full width */}
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 card-hover slide-in-left">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-gray-800 text-center flex items-center justify-center">
+              <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-blue-600 mr-2 md:mr-3" />
+              Ways to Give
+            </h2>
+            
+            <div className="grid sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6 max-w-4xl mx-auto">
+              {/* Online Giving */}
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-xl border card-hover transform hover:scale-105 transition-all duration-300 flex flex-col">
+                <div className="text-center flex-1 flex flex-col">
+                  <div className="bg-blue-600 rounded-full p-2 sm:p-3 w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 flex items-center justify-center">
+                    <CreditCard className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                  </div>
+                  <h3 className="text-base sm:text-lg md:text-xl font-bold mb-2 sm:mb-3 text-gray-800">Online Giving</h3>
+                  <div className="flex-1 flex items-center">
+                    <p className="text-sm md:text-base text-gray-600 leading-relaxed">
+                      Secure, convenient, and instant. Give anytime, anywhere with our trusted payment system.
+                    </p>
+                  </div>
+                  <div className="mt-3 sm:mt-4">
+                    <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 md:py-4 px-3 sm:px-4 rounded-lg btn-primary btn-ripple flex items-center justify-center min-h-[48px] text-sm md:text-base shadow-lg hover:shadow-xl transition-all duration-300">
+                      Give Online Now
+                      <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="bg-white p-4 rounded-lg border card-hover">
-                <h4 className="font-semibold mb-2">Bank Transfer</h4>
-                <p className="text-sm text-gray-600 mb-2">Bank: Muscat Bank</p>
-                <p className="text-sm text-gray-600 mb-2">Account: Living Hope AG</p>
-                <p className="text-sm text-gray-600">Account Number: 1234567890</p>
+
+              {/* Bank Transfer */}
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 sm:p-6 rounded-xl border card-hover transform hover:scale-105 transition-all duration-300 flex flex-col">
+                <div className="text-center flex-1 flex flex-col">
+                  <div className="bg-purple-600 rounded-full p-2 sm:p-3 w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 flex items-center justify-center">
+                    <Building className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                  </div>
+                  <h3 className="text-base sm:text-lg md:text-xl font-bold mb-2 sm:mb-3 text-gray-800">Bank Transfer</h3>
+                  <div className="flex-1 flex flex-col justify-center">
+                    <div className="text-sm md:text-base text-gray-600 space-y-2">
+                      <div className="bg-white bg-opacity-70 p-2 sm:p-3 rounded-lg">
+                        <p className="font-semibold text-xs sm:text-sm">Bank: Muscat Bank</p>
+                        <p className="text-xs sm:text-sm">Account: Living Hope AG</p>
+                        <p className="text-xs sm:text-sm">Account #: <span className="font-mono">1234567890</span></p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-3 sm:mt-4">
+                    <button className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 md:py-4 px-3 sm:px-4 rounded-lg flex items-center justify-center min-h-[48px] text-sm md:text-base shadow-lg hover:shadow-xl transition-all duration-300">
+                      Copy Account Details
+                      <Copy className="ml-2 h-4 w-4 md:h-5 md:w-5" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="text-center appear">
-          <p className="text-gray-600 mb-6 italic text-lg">
-            "Each of you should give what you have decided in your heart to give, not reluctantly or under compulsion, for God loves a cheerful giver." - 2 Corinthians 9:7
-          </p>
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded gentle-pulse">
-            <p className="text-sm text-yellow-800">
-              <strong>Note:</strong> All gifts are used solely for church activities and community service. We maintain full transparency in our financial records.
-            </p>
+          {/* Scripture & Your Impact - Adjusted proportions */}
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+            {/* Scripture & Transparency - Increased width (2/3) */}
+            <div className="md:col-span-2 bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 appear flex flex-col">
+              <div className="text-center mb-4 sm:mb-6">
+                <Quote className="h-8 w-8 sm:h-10 sm:w-10 mx-auto text-blue-600 mb-2 sm:mb-3" />
+                <blockquote className="text-sm sm:text-base md:text-lg text-gray-700 italic leading-relaxed px-2">
+                  "Each of you should give what you have decided in your heart to give, not reluctantly or under compulsion, for God loves a cheerful giver."
+                </blockquote>
+                <cite className="text-blue-600 font-semibold mt-2 sm:mt-3 block text-sm sm:text-base">2 Corinthians 9:7</cite>
+              </div>
+              
+              <div className="grid sm:grid-cols-2 gap-3 sm:gap-4 flex-1">
+                <div className="bg-blue-50 p-3 sm:p-4 rounded-lg flex flex-col">
+                  <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 mb-2" />
+                  <h4 className="font-bold text-gray-800 mb-2 text-sm sm:text-base">Financial Transparency</h4>
+                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed flex-1">
+                    We maintain complete transparency in our finances. Annual reports and financial statements are available to all members and supporters.
+                  </p>
+                </div>
+                <div className="bg-green-50 p-3 sm:p-4 rounded-lg flex flex-col">
+                  <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 mb-2" />
+                  <h4 className="font-bold text-gray-800 mb-2 text-sm sm:text-base">Secure & Trusted</h4>
+                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed flex-1">
+                    All online donations are processed through secure, encrypted payment systems. Your personal and financial information is always protected.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Your Impact - Reduced width (1/3) and matched height */}
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 card-hover slide-in-right flex flex-col">
+              <h3 className="text-base sm:text-lg md:text-xl font-bold mb-3 sm:mb-4 text-gray-800 flex items-center">
+                <Target className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mr-2" />
+                Your Impact
+              </h3>
+              <div className="flex-1 flex flex-col justify-between space-y-3 sm:space-y-2 md:space-y-1">
+                {[
+                  { icon: Users, text: "Community outreach programs" },
+                  { icon: Home, text: "Facility maintenance & improvements" },
+                  { icon: BookOpen, text: "Children's & youth ministries" },
+                  { icon: Globe, text: "Mission work & evangelism" },
+                  { icon: Heart, text: "Family assistance programs" }
+                ].map((item, index) => (
+                  <div key={index} className="flex items-center stagger-animation group py-1">
+                    <div className="bg-blue-100 p-1.5 sm:p-2 rounded-lg mr-2 sm:mr-3 group-hover:bg-blue-200 transition-colors flex-shrink-0">
+                      <item.icon className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">{item.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -2453,17 +2584,17 @@ Living Hope AG Team`;
   );
 
   const renderContact = () => (
-    <div className="min-h-screen bg-gray-50 py-16">
-      <div className="max-w-7xl mx-auto px-4">
-        <h2 className="text-4xl font-bold text-center mb-12 text-gray-800 fade-in">
+    <div className="min-h-screen bg-gray-50 py-8 md:py-12 lg:py-16">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 text-gray-800 fade-in">
           Contact Us
         </h2>
         
-        <div className="grid lg:grid-cols-2 gap-12">
-          <div className="bg-white rounded-lg shadow-lg p-8 card-hover slide-in-left">
-            <h3 className="text-2xl font-bold mb-6 text-gray-800">Get In Touch</h3>
+        <div className="grid lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12">
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 card-hover slide-in-left">
+            <h3 className="text-xl sm:text-2xl font-bold mb-4 md:mb-6 text-gray-800">Get In Touch</h3>
             
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               {[
                 { icon: MapPin, title: "Address", content: "23°38'03.8\"N 58°06'20.0\"E\nMuscat, Oman" },
                 { icon: Phone, title: "Phone", content: "+968 1234 5678" },
@@ -2471,18 +2602,20 @@ Living Hope AG Team`;
                 { icon: Clock, title: "Service Times", content: "Friday Service: 10:00 AM\nSunday Kids Meeting: 3:00 PM\nMonthly All Night: Last Friday" }
               ].map((contact, index) => (
                 <div key={index} className="flex items-start stagger-animation">
-                  <div className="text-blue-600 text-xl mr-4 mt-1 icon-hover"><contact.icon className="h-5 w-5" /></div>
-                  <div>
-                    <h4 className="font-semibold text-gray-800">{contact.title}</h4>
-                    <p className="text-gray-600 whitespace-pre-line">{contact.content}</p>
+                  <div className="text-blue-600 text-xl mr-3 sm:mr-4 mt-1 icon-hover flex-shrink-0">
+                    <contact.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-semibold text-gray-800 text-sm sm:text-base">{contact.title}</h4>
+                    <p className="text-gray-600 whitespace-pre-line text-sm sm:text-base break-words">{contact.content}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="mt-8">
-              <h4 className="font-semibold text-gray-800 mb-4">Location</h4>
-              <div className="bg-gray-200 rounded-lg h-64 overflow-hidden card-hover">
+            <div className="mt-6 md:mt-8">
+              <h4 className="font-semibold text-gray-800 mb-3 md:mb-4 text-sm sm:text-base">Location</h4>
+              <div className="bg-gray-200 rounded-lg h-48 sm:h-56 md:h-64 overflow-hidden card-hover">
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3656.1234567890!2d58.10555!3d23.634388888888888!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMjPCsDM4JzAzLjgiTiA1OMKwMDYnMjAuMCJF!5e0!3m2!1sen!2som!4v1234567890!5m2!1sen!2som"
                   width="100%"
@@ -2497,44 +2630,44 @@ Living Hope AG Team`;
             </div>
           </div>
 
-          <div ref={contactFormRef} className="bg-white rounded-lg shadow-lg p-8 card-hover slide-in-right">
-            <h3 className="text-2xl font-bold mb-6 text-gray-800">Send Us a Message</h3>
+          <div ref={contactFormRef} className="bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 card-hover slide-in-right">
+            <h3 className="text-xl sm:text-2xl font-bold mb-4 md:mb-6 text-gray-800">Send Us a Message</h3>
             
             {submitMessage && (
-              <div className={`p-6 rounded-xl mb-8 border-l-4 shadow-lg transform transition-all duration-500 ${
+              <div className={`p-4 sm:p-6 rounded-xl mb-6 md:mb-8 border-l-4 shadow-lg transform transition-all duration-500 ${
                 submitMessage.includes('successfully') 
                   ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-500 text-green-800' 
                   : 'bg-gradient-to-r from-red-50 to-pink-50 border-red-500 text-red-800'
               }`}>
                 <div className="flex items-center">
                   {submitMessage.includes('successfully') ? (
-                    <div className="flex-shrink-0 mr-4">
-                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex-shrink-0 mr-3 sm:mr-4">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg className="w-3 h-3 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex-shrink-0 mr-4">
-                      <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex-shrink-0 mr-3 sm:mr-4">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-red-500 rounded-full flex items-center justify-center">
+                        <svg className="w-3 h-3 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </div>
                     </div>
                   )}
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-lg mb-1">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-base sm:text-lg mb-1">
                       {submitMessage.includes('successfully') ? 'Message Sent!' : 'Something went wrong'}
                     </h4>
-                    <p className="text-sm opacity-90">{submitMessage}</p>
+                    <p className="text-xs sm:text-sm opacity-90 break-words">{submitMessage}</p>
                   </div>
                 </div>
               </div>
             )}
             
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
               <div className="stagger-animation">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Full Name
@@ -2544,7 +2677,7 @@ Living Hope AG Team`;
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 form-input"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 form-input text-sm sm:text-base"
                   placeholder="Enter your full name"
                   required
                 />
@@ -2559,7 +2692,7 @@ Living Hope AG Team`;
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 form-input"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 form-input text-sm sm:text-base"
                   placeholder="Enter your email address"
                   required
                 />
@@ -2569,22 +2702,22 @@ Living Hope AG Team`;
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Phone Number
                 </label>
-                <div className="flex space-x-2">
+                <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
                   {/* Custom Country Dropdown */}
-                  <div className="relative">
+                  <div className="relative sm:min-w-[140px]">
                     <button
                       type="button"
                       onClick={() => setIsCountryDropdownOpen(!isCountryDropdownOpen)}
-                      className="min-w-[140px] px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 form-input bg-gray-50 text-left flex items-center justify-between transition-colors duration-200 hover:border-gray-400"
+                      className="w-full sm:min-w-[140px] px-3 py-2 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 form-input bg-gray-50 text-left flex items-center justify-between transition-colors duration-200 hover:border-gray-400 text-sm sm:text-base"
                     >
-                      <span className="font-mono text-sm">
+                      <span className="font-mono text-xs sm:text-sm truncate">
                         {COUNTRIES.find(c => c.code === formData.countryCode)?.code || '+968'} {COUNTRIES.find(c => c.code === formData.countryCode)?.name || 'Oman'}
                       </span>
-                      <ChevronDown className="h-4 w-4 text-gray-500" />
+                      <ChevronDown className="h-4 w-4 text-gray-500 flex-shrink-0 ml-1" />
                     </button>
                     
                     {isCountryDropdownOpen && (
-                      <div className="absolute z-50 w-80 mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-hidden">
+                      <div className="absolute z-50 w-full sm:w-80 mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-hidden">
                         <div className="p-2 border-b border-gray-200">
                           <input
                             type="text"
@@ -2606,7 +2739,7 @@ Living Hope AG Team`;
                               }`}
                             >
                               <span className="inline-block w-12 text-gray-600">{country.code}</span>
-                              <span className="ml-2">{country.name}</span>
+                              <span className="ml-2 truncate">{country.name}</span>
                             </button>
                           ))}
                         </div>
@@ -2629,7 +2762,7 @@ Living Hope AG Team`;
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 form-input"
+                    className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 form-input text-sm sm:text-base"
                     placeholder="Enter your phone number"
                   />
                 </div>
@@ -2641,15 +2774,15 @@ Living Hope AG Team`;
                   <button
                     type="button"
                     onClick={() => setIsSubjectDropdownOpen(!isSubjectDropdownOpen)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 form-input bg-white text-left flex items-center justify-between transition-colors duration-200 hover:border-gray-400"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 form-input bg-white text-left flex items-center justify-between transition-colors duration-200 hover:border-gray-400 text-sm sm:text-base"
                   >
-                    <span className="text-gray-700">
+                    <span className="text-gray-700 truncate">
                       {formData.subject ? 
                         SUBJECT_OPTIONS.find(opt => opt.value === formData.subject)?.label || 'Select a subject' 
                         : 'Select a subject'
                       }
                     </span>
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                    <ChevronDown className="h-4 w-4 text-gray-500 flex-shrink-0 ml-1" />
                   </button>
                   
                   {isSubjectDropdownOpen && (
@@ -2661,12 +2794,12 @@ Living Hope AG Team`;
                             key={index}
                             type="button"
                             onClick={() => handleSubjectSelect(option.value)}
-                            className={`w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors duration-150 flex items-center ${
+                            className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors duration-150 flex items-center text-sm sm:text-base ${
                               formData.subject === option.value ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
                             }`}
                           >
-                            <IconComponent className="h-4 w-4 mr-3 text-gray-400" />
-                            <span>{option.label}</span>
+                            <IconComponent className="h-4 w-4 mr-2 sm:mr-3 text-gray-400 flex-shrink-0" />
+                            <span className="truncate">{option.label}</span>
                           </button>
                         );
                       })}
@@ -2690,7 +2823,7 @@ Living Hope AG Team`;
                   value={formData.message}
                   onChange={handleInputChange}
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 form-input"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 form-input text-sm sm:text-base resize-y"
                   placeholder="Tell us how we can help you..."
                   required
                 ></textarea>
@@ -2699,7 +2832,7 @@ Living Hope AG Team`;
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`w-full font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform ${
+                className={`w-full font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-xl transition-all duration-300 transform min-h-[48px] text-sm sm:text-base ${
                   isSubmitting 
                     ? 'bg-gray-400 cursor-not-allowed scale-95' 
                     : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl scale-100 hover:scale-105'
@@ -2708,7 +2841,7 @@ Living Hope AG Team`;
                 <div className="flex items-center justify-center">
                   {isSubmitting ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin -ml-1 mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
@@ -2716,7 +2849,7 @@ Living Hope AG Team`;
                     </>
                   ) : (
                     <>
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 w-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                       </svg>
                       Send Message
@@ -2878,9 +3011,21 @@ Living Hope AG Team`;
           
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200"
+            disabled={adminLoginLoading}
+            className={`w-full font-bold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center ${
+              adminLoginLoading 
+                ? 'bg-blue-400 cursor-not-allowed' 
+                : 'bg-blue-600 hover:bg-blue-700'
+            } text-white`}
           >
-            Login to Admin Panel
+            {adminLoginLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                Logging in...
+              </>
+            ) : (
+              'Login to Admin Panel'
+            )}
           </button>
         </form>
       </div>

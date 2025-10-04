@@ -26,17 +26,12 @@ async def lifespan(app: FastAPI):
     pass
 
 app = FastAPI(title="Living Hope AG API", version="1.0.0", lifespan=lifespan)
-from fastapi.staticfiles import StaticFiles
-import os
 
-# Serve React app
-if os.path.exists("../frontend/dist"):
-    app.mount("/", StaticFiles(directory="../frontend/dist", html=True), name="static")
 # Configuration from environment variables
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-this-secret-key-in-production")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256") 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://yourfrontend.vercel.app").split(",")
 
 # CORS middleware with environment-based origins
 app.add_middleware(
@@ -714,6 +709,9 @@ async def delete_announcement(announcement_id: str, current_admin: str = Depends
 @app.get("/api/health")
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.now()}
+
+# For Vercel deployment
+handler = app
 
 if __name__ == "__main__":
     import uvicorn
