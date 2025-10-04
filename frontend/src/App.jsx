@@ -765,6 +765,12 @@ const AppContent = () => {
   const isTokenExpired = (token) => {
     if (!token) return true;
     try {
+      // Validate token format first
+      if (!token.includes('.') || token.split('.').length !== 3) {
+        console.error('Token format invalid:', token);
+        return true;
+      }
+      
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Date.now() / 1000;
       const expirationTime = payload.exp;
@@ -1345,7 +1351,8 @@ const AppContent = () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        const data = result.data; // Extract data from the success response wrapper
         
         // Log token details for debugging
         try {
