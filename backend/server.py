@@ -33,12 +33,21 @@ app = FastAPI(title="Living Hope AG API", version="1.0.0")
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-this-secret-key-in-production")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256") 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://livinghopeag.vercel.app").split(",")
+
+# CORS Origins - Allow all Vercel preview URLs and production
+cors_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://livinghopeag.vercel.app")
+CORS_ORIGINS = cors_origins_env.split(",")
+
+# Add wildcard for Vercel preview URLs
+CORS_ORIGINS.extend([
+    "https://*.vercel.app",
+    "https://livinghopeag-*.vercel.app"
+])
 
 # CORS middleware with environment-based origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
+    allow_origins=["*"],  # Allow all origins for now to fix CORS issues
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
