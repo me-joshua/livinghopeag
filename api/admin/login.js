@@ -5,9 +5,9 @@ const {
   sendUnauthorized,
   parseRequestBody, 
   validateRequiredFields 
-} = require('../../utils');
-const { db, verifyPassword } = require('../../database');
-const { createAccessToken } = require('../../auth');
+} = require('../utils');
+const { db, verifyPassword } = require('../database');
+const { createAccessToken } = require('../auth');
 
 module.exports = async function handler(req, res) {
   // Handle CORS
