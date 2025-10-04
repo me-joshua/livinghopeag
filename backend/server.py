@@ -3,35 +3,37 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import List, Optional
-from contextlib import asynccontextmanager
 import os
 from datetime import datetime, timedelta
 import uuid
-import subprocess
 import json
 from jose import JWTError, jwt, ExpiredSignatureError
 from dotenv import load_dotenv
-from database import get_db, create_tables, verify_password, db, SupabaseDB
 
 # Load environment variables
 load_dotenv()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup
-    create_tables()
-    print("✅ Database tables created")
-    yield
-    # Shutdown (cleanup if needed)
-    pass
+# Import database functions
+try:
+    from database import get_db, create_tables, verify_password, SupabaseDB
+except ImportError:
+    # Fallback for serverless environment
+    SupabaseDB = None
+    def get_db():
+        return None
+    def create_tables():
+        pass
+    def verify_password(password, hashed):
+        return False
 
-app = FastAPI(title="Living Hope AG API", version="1.0.0", lifespan=lifespan)
+# Create FastAPI app without lifespan for Vercel compatibility
+app = FastAPI(title="Living Hope AG API", version="1.0.0")
 
 # Configuration from environment variables
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-this-secret-key-in-production")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256") 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://yourfrontend.vercel.app").split(",")
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://livinghopeag.vercel.app").split(",")
 
 # CORS middleware with environment-based origins
 app.add_middleware(
@@ -705,10 +707,22 @@ async def delete_announcement(announcement_id: str, current_admin: str = Depends
     db.commit()
     return {"message": "Announcement deleted successfully"}
 
-# Health check endpoint
+# Health check endpoint (always available)
+@app.get("/")
+async def root():
+    return {"status": "Living Hope AG API is running", "timestamp": datetime.now()}
+
 @app.get("/api/health")
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.now()}
+
+# Initialize database on first import (for serverless)
+try:
+    if SupabaseDB:
+        create_tables()
+        print("✅ Database connection established")
+except Exception as e:
+    print(f"⚠️ Database initialization error: {e}")
 
 # For Vercel deployment
 handler = app
