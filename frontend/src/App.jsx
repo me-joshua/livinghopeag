@@ -1043,11 +1043,12 @@ const AppContent = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/media`);
       if (response.ok) {
-        const data = await response.json();
-        setSermons(data);
+        const result = await response.json();
+        setSermons(result.success ? result.data : []);
       }
     } catch (error) {
       console.error('Failed to fetch sermons:', error);
+      setSermons([]);
     }
   };
 
@@ -1056,11 +1057,12 @@ const AppContent = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/events`);
       if (response.ok) {
-        const data = await response.json();
-        setEvents(data);
+        const result = await response.json();
+        setEvents(result.success ? result.data : []);
       }
     } catch (error) {
       console.error('Failed to fetch events:', error);
+      setEvents([]);
     }
   };
 
@@ -1069,11 +1071,12 @@ const AppContent = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/announcements`);
       if (response.ok) {
-        const data = await response.json();
-        setAnnouncements(data);
+        const result = await response.json();
+        setAnnouncements(result.success ? result.data : []);
       }
     } catch (error) {
       console.error('Failed to fetch announcements:', error);
+      setAnnouncements([]);
     }
   };
 
@@ -2012,7 +2015,7 @@ Living Hope AG Team`;
           ) : (
             // Dynamic announcements - show only first 3 on home page
             <div className="grid md:grid-cols-3 gap-8">
-              {announcements.slice(0, 3).map((announcement, index) => {
+              {(Array.isArray(announcements) ? announcements : []).slice(0, 3).map((announcement, index) => {
                 const iconConfig = getIconComponent(announcement.icon);
                 const IconComponent = iconConfig.component;
                 const iconColor = iconConfig.color;
@@ -2088,7 +2091,7 @@ Living Hope AG Team`;
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {sermons.map((sermon, index) => (
+            {(Array.isArray(sermons) ? sermons : []).map((sermon, index) => (
               <div key={sermon.id || index} className="bg-white rounded-lg shadow-lg overflow-hidden card-hover stagger-animation">
                 {sermon.video_url ? (
                   <div className="aspect-video relative overflow-hidden">
@@ -2189,7 +2192,7 @@ Living Hope AG Team`;
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {announcements.map((announcement, index) => {
+            {(Array.isArray(announcements) ? announcements : []).map((announcement, index) => {
               const iconConfig = getIconComponent(announcement.icon);
               const IconComponent = iconConfig.component;
               const iconColor = iconConfig.color;
@@ -2354,7 +2357,7 @@ Living Hope AG Team`;
             {/* Upcoming Events Section */}
             {(() => {
               const currentDate = new Date();
-              const upcomingEvents = events.filter(event => new Date(event.date) >= currentDate);
+              const upcomingEvents = (Array.isArray(events) ? events : []).filter(event => new Date(event.date) >= currentDate);
               
               if (upcomingEvents.length > 0) {
                 return (
@@ -2410,7 +2413,7 @@ Living Hope AG Team`;
             {/* Past Events Section */}
             {(() => {
               const currentDate = new Date();
-              const pastEvents = events.filter(event => new Date(event.date) < currentDate);
+              const pastEvents = (Array.isArray(events) ? events : []).filter(event => new Date(event.date) < currentDate);
               
               if (pastEvents.length > 0) {
                 return (
