@@ -1,8 +1,0 @@
-[build]
-builder = "nixpacks"
-
-[deploy]
-startCommand = "python main.py"
-healthcheckPath = "/docs"
-healthcheckTimeout = 300
-restartPolicyType = "always"

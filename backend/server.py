@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 from typing import List, Optional
 from contextlib import asynccontextmanager
 import os
@@ -12,8 +11,7 @@ import subprocess
 import json
 from jose import JWTError, jwt, ExpiredSignatureError
 from dotenv import load_dotenv
-from database import get_db, create_tables, verify_password
-from database import ContactForm as DBContactForm, Media as DBMedia, Event as DBEvent, AdminUser as DBAdminUser, Announcement as DBannouncement
+from database import get_db, create_tables, verify_password, db, SupabaseDB
 
 # Load environment variables
 load_dotenv()
@@ -28,7 +26,12 @@ async def lifespan(app: FastAPI):
     pass
 
 app = FastAPI(title="Living Hope AG API", version="1.0.0", lifespan=lifespan)
+from fastapi.staticfiles import StaticFiles
+import os
 
+# Serve React app
+if os.path.exists("../frontend/dist"):
+    app.mount("/", StaticFiles(directory="../frontend/dist", html=True), name="static")
 # Configuration from environment variables
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-this-secret-key-in-production")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256") 
@@ -112,7 +115,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
     return encoded_jwt
 
-def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security), db: SupabaseDB = Depends(get_db)):
     try:
         payload = jwt.decode(credentials.credentials, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
         username = payload.get("sub")
@@ -120,11 +123,8 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security), 
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
         
         # Verify user exists in database and is active
-        admin_user = db.query(DBAdminUser).filter(
-            DBAdminUser.username == username, 
-            DBAdminUser.is_active == True
-        ).first()
-        if not admin_user:
+        admin_user = db.get_admin_user_by_username(username)
+        if not admin_user or not admin_user.get('is_active', False):
             raise HTTPException(status_code=401, detail="User not found or inactive")
             
         return username
@@ -141,37 +141,39 @@ async def root():
 
 # Announcement endpoints
 @app.get("/api/announcements")
-async def get_announcements(db: Session = Depends(get_db)):
-    announcements = db.query(DBannouncement).order_by(DBannouncement.created_at.desc()).all()
+async def get_announcements(db: SupabaseDB = Depends(get_db)):
+    announcements = db.get_all_announcements()
     return [
         {
-            "id": announcement.id,
-            "title": announcement.title,
-            "content": announcement.content,
-            "date": announcement.date,
-            "icon": getattr(announcement, 'icon', 'Megaphone'),
-            "created_at": announcement.created_at
+            "id": announcement["id"],
+            "title": announcement["title"],
+            "content": announcement["content"],
+            "date": announcement["date"],
+            "icon": announcement.get("icon", "Megaphone"),
+            "created_at": announcement["created_at"]
         } for announcement in announcements
     ]
 
 # Admin authentication endpoints
 @app.post("/api/admin/login", response_model=Token)
-async def admin_login(admin_data: AdminLogin, db: Session = Depends(get_db)):
+async def admin_login(admin_data: AdminLogin, db: SupabaseDB = Depends(get_db)):
     # Look up admin user in database
-    admin_user = db.query(DBAdminUser).filter(
-        DBAdminUser.username == admin_data.username,
-        DBAdminUser.is_active == True
-    ).first()
-    
-    if not admin_user or not verify_password(admin_data.password, str(admin_user.password_hash)):
+    try:
+        admin_user = db.get_admin_user_by_username(admin_data.username)
+        
+        if not admin_user or not admin_user.get('is_active', False) or not verify_password(admin_data.password, str(admin_user['password_hash'])):
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid username or password"
+            )
+        
+        # Update last login time
+        db.update_admin_last_login(admin_user['id'])
+    except Exception as e:
         raise HTTPException(
-            status_code=401,
-            detail="Invalid username or password"
+            status_code=500,
+            detail=f"Database error: {str(e)}"
         )
-    
-    # Update last login time
-    setattr(admin_user, 'last_login', datetime.utcnow())
-    db.commit()
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
@@ -181,63 +183,62 @@ async def admin_login(admin_data: AdminLogin, db: Session = Depends(get_db)):
 
 # Admin-only endpoints
 @app.get("/api/admin/contact-messages")
-async def get_admin_contact_messages(current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
-    messages = db.query(DBContactForm).all()
+async def get_admin_contact_messages(current_admin: str = Depends(verify_token), db: SupabaseDB = Depends(get_db)):
+    messages = db.get_all_contact_forms()
     return {
         "success": True,
         "messages": [
             {
-                "id": msg.id,
-                "fullName": msg.fullName,
-                "email": msg.email,
-                "countryCode": msg.countryCode,
-                "phone": msg.phone,
-                "subject": msg.subject,
-                "message": msg.message,
-                "contact_permission": msg.contact_permission,
-                "created_at": msg.created_at
+                "id": msg["id"],
+                "fullName": msg["fullName"],
+                "email": msg["email"],
+                "countryCode": msg["countryCode"],
+                "phone": msg["phone"],
+                "subject": msg["subject"],
+                "message": msg["message"],
+                "contact_permission": msg["contact_permission"],
+                "created_at": msg["created_at"]
             } for msg in messages
         ],
         "total": len(messages)
     }
 
 @app.delete("/api/admin/contact-messages/{message_id}")
-async def delete_contact_message(message_id: str, current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
-    message = db.query(DBContactForm).filter(DBContactForm.id == message_id).first()
-    if not message:
+async def delete_contact_message(message_id: str, current_admin: str = Depends(verify_token), db: SupabaseDB = Depends(get_db)):
+    result = db.delete_contact_form(message_id)
+    if not result:
         raise HTTPException(status_code=404, detail="Message not found")
     
-    db.delete(message)
-    db.commit()
     return {"success": True, "message": "Contact message deleted successfully"}
 
 @app.post("/api/admin/media")
-async def admin_create_media(media: Media, current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
-    db_media = DBMedia(
-        title=media.title,
-        name=media.name,
-        date=media.date,
-        description=media.description,
-        video_url=media.video_url,
-        audio_url=media.audio_url,
-        scripture=media.scripture,
-        series=media.series,
-        duration=media.duration
-    )
-    db.add(db_media)
-    db.commit()
-    db.refresh(db_media)
+async def admin_create_media(media: Media, current_admin: str = Depends(verify_token), db: SupabaseDB = Depends(get_db)):
+    media_data = {
+        "title": media.title,
+        "name": media.name,
+        "date": media.date,
+        "description": media.description,
+        "video_url": media.video_url,
+        "audio_url": media.audio_url,
+        "scripture": media.scripture,
+        "series": media.series,
+        "duration": media.duration
+    }
+    
+    new_media = db.create_media(media_data)
+    if not new_media:
+        raise HTTPException(status_code=500, detail="Failed to create media")
     
     return {
         "success": True,
         "message": "Media created successfully",
         "media": {
-            "id": db_media.id,
-            "title": db_media.title,
-            "name": db_media.name,
-            "date": db_media.date,
-            "description": db_media.description,
-            "video_url": db_media.video_url,
+            "id": new_media["id"],
+            "title": new_media["title"],
+            "name": new_media["name"],
+            "date": new_media["date"],
+            "description": new_media["description"],
+            "video_url": new_media["video_url"],
             "audio_url": db_media.audio_url,
             "scripture": db_media.scripture,
             "series": db_media.series,
@@ -246,22 +247,22 @@ async def admin_create_media(media: Media, current_admin: str = Depends(verify_t
     }
 
 @app.get("/api/admin/media")
-async def admin_get_media(current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
-    media_items = db.query(DBMedia).all()
+async def admin_get_media(current_admin: str = Depends(verify_token), db: SupabaseDB = Depends(get_db)):
+    media_items = db.get_all_media()
     return {
         "success": True,
         "media": [
             {
-                "id": media.id,
-                "title": media.title,
-                "name": media.name,
-                "date": media.date,
-                "description": media.description,
-                "video_url": media.video_url,
-                "audio_url": media.audio_url,
-                "scripture": media.scripture,
-                "series": media.series,
-                "duration": media.duration
+                "id": media["id"],
+                "title": media["title"],
+                "name": media["name"],
+                "date": media["date"],
+                "description": media["description"],
+                "video_url": media["video_url"],
+                "audio_url": media["audio_url"],
+                "scripture": media["scripture"],
+                "series": media["series"],
+                "duration": media["duration"]
             } for media in media_items
         ],
         "total": len(media_items)
@@ -272,7 +273,7 @@ async def update_media(
     media_id: str, 
     media: Media, 
     current_admin: str = Depends(verify_token), 
-    db: Session = Depends(get_db)
+    db: SupabaseDB = Depends(get_db)
 ):
     db_media = db.query(DBMedia).filter(DBMedia.id == media_id).first()
     if not db_media:
@@ -310,7 +311,7 @@ async def update_media(
     }
 
 @app.delete("/api/admin/media/{media_id}")
-async def admin_delete_media(media_id: str, current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
+async def admin_delete_media(media_id: str, current_admin: str = Depends(verify_token), db: SupabaseDB = Depends(get_db)):
     media = db.query(DBMedia).filter(DBMedia.id == media_id).first()
     if not media:
         raise HTTPException(status_code=404, detail="Media not found")
@@ -321,7 +322,7 @@ async def admin_delete_media(media_id: str, current_admin: str = Depends(verify_
 
 # Contact form endpoints
 @app.post("/api/contact")
-async def submit_contact_form(form: ContactForm, db: Session = Depends(get_db)):
+async def submit_contact_form(form: ContactForm, db: SupabaseDB = Depends(get_db)):
     try:
         # Create database record
         db_form = DBContactForm(
@@ -352,27 +353,27 @@ async def submit_contact_form(form: ContactForm, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Failed to process contact form")
 
 @app.get("/api/admin/contact-forms")
-async def get_contact_forms(token: str = Depends(verify_token), db: Session = Depends(get_db)):
+async def get_contact_forms(token: str = Depends(verify_token), db: SupabaseDB = Depends(get_db)):
     # Order by created_at descending (newest first)
-    forms = db.query(DBContactForm).order_by(DBContactForm.created_at.desc()).all()
+    forms = db.get_all_contact_forms()
     return [
         {
-            "id": form.id,
-            "fullName": form.fullName,
-            "email": form.email,
-            "countryCode": form.countryCode,
-            "phone": form.phone,
-            "subject": form.subject,
-            "message": form.message,
-            "contact_permission": form.contact_permission,
-            "isRead": form.isRead,
-            "created_at": form.created_at
+            "id": form["id"],
+            "fullName": form["fullName"],
+            "email": form["email"],
+            "countryCode": form["countryCode"],
+            "phone": form["phone"],
+            "subject": form["subject"],
+            "message": form["message"],
+            "contact_permission": form["contact_permission"],
+            "isRead": form["isRead"],
+            "created_at": form["created_at"]
         } for form in forms
     ]
 
 # Mark contact message as read
 @app.patch("/api/admin/contact-forms/{form_id}/read")
-async def mark_contact_form_as_read(form_id: str, token: str = Depends(verify_token), db: Session = Depends(get_db)):
+async def mark_contact_form_as_read(form_id: str, token: str = Depends(verify_token), db: SupabaseDB = Depends(get_db)):
     form = db.query(DBContactForm).filter(DBContactForm.id == form_id).first()
     if not form:
         raise HTTPException(status_code=404, detail="Contact form not found")
@@ -385,24 +386,24 @@ async def mark_contact_form_as_read(form_id: str, token: str = Depends(verify_to
 
 # Event endpoints
 @app.get("/api/events")
-async def get_events(db: Session = Depends(get_db)):
-    events = db.query(DBEvent).all()
+async def get_events(db: SupabaseDB = Depends(get_db)):
+    events = db.get_all_events()
     return [
         {
-            "id": event.id,
-            "title": event.title,
-            "date": event.date,
-            "time": event.time,
-            "location": event.location,
-            "description": event.description,
-            "category": event.category,
-            "registration_required": event.registration_required,
+            "id": event["id"],
+            "title": event["title"],
+            "date": event["date"],
+            "time": event["time"],
+            "location": event["location"],
+            "description": event["description"],
+            "category": event["category"],
+            "registration_required": event["registration_required"],
             "contact_info": event.contact_info
         } for event in events
     ]
 
 @app.get("/api/events/{event_id}")
-async def get_event(event_id: str, db: Session = Depends(get_db)):
+async def get_event(event_id: str, db: SupabaseDB = Depends(get_db)):
     event = db.query(DBEvent).filter(DBEvent.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -420,33 +421,33 @@ async def get_event(event_id: str, db: Session = Depends(get_db)):
 
 # Media endpoints (public)
 @app.get("/api/media")
-async def get_media(db: Session = Depends(get_db)):
-    media_items = db.query(DBMedia).all()
+async def get_media(db: SupabaseDB = Depends(get_db)):
+    media_items = db.get_all_media()
     return [
         {
-            "id": media.id,
-            "title": media.title,
-            "name": media.name,
-            "date": media.date,
-            "description": media.description,
-            "video_url": media.video_url,
-            "audio_url": media.audio_url,
-            "scripture": media.scripture,
+            "id": media["id"],
+            "title": media["title"],
+            "name": media["name"],
+            "date": media["date"],
+            "description": media["description"],
+            "video_url": media["video_url"],
+            "audio_url": media["audio_url"],
+            "scripture": media["scripture"],
             "series": media.series,
             "duration": media.duration
         } for media in media_items
     ]
 
 @app.get("/api/media/{media_id}")
-async def get_media_item(media_id: str, db: Session = Depends(get_db)):
-    media = db.query(DBMedia).filter(DBMedia.id == media_id).first()
+async def get_media_item(media_id: str, db: SupabaseDB = Depends(get_db)):
+    media = db.get_media_by_id(media_id)
     if not media:
         raise HTTPException(status_code=404, detail="Media not found")
     return {
-        "id": media.id,
-        "title": media.title,
-        "name": media.name,
-        "date": media.date,
+        "id": media["id"],
+        "title": media["title"],
+        "name": media["name"],
+        "date": media["date"],
         "description": media.description,
         "video_url": media.video_url,
         "audio_url": media.audio_url,
@@ -553,25 +554,25 @@ async def get_church_info():
 
 # Admin Event Management endpoints
 @app.get("/api/admin/events")
-async def get_admin_events(current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
-    events = db.query(DBEvent).all()
+async def get_admin_events(current_admin: str = Depends(verify_token), db: SupabaseDB = Depends(get_db)):
+    events = db.get_all_events()
     return [
         {
-            "id": event.id,
-            "title": event.title,
-            "date": event.date,
-            "time": event.time,
-            "location": event.location,
-            "description": event.description,
-            "category": event.category,
-            "registration_required": event.registration_required,
-            "contact_info": event.contact_info,
-            "created_at": event.created_at
+            "id": event["id"],
+            "title": event["title"],
+            "date": event["date"],
+            "time": event["time"],
+            "location": event["location"],
+            "description": event["description"],
+            "category": event["category"],
+            "registration_required": event["registration_required"],
+            "contact_info": event["contact_info"],
+            "created_at": event["created_at"]
         } for event in events
     ]
 
 @app.post("/api/admin/events")
-async def create_event(event: Event, current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
+async def create_event(event: Event, current_admin: str = Depends(verify_token), db: SupabaseDB = Depends(get_db)):
     new_event = DBEvent(
         id=str(uuid.uuid4()),
         title=event.title,
@@ -593,7 +594,7 @@ async def update_event(
     event_id: str, 
     event: Event, 
     current_admin: str = Depends(verify_token), 
-    db: Session = Depends(get_db)
+    db: SupabaseDB = Depends(get_db)
 ):
     db_event = db.query(DBEvent).filter(DBEvent.id == event_id).first()
     if not db_event:
@@ -630,7 +631,7 @@ async def update_event(
     }
 
 @app.delete("/api/admin/events/{event_id}")
-async def delete_event(event_id: str, current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
+async def delete_event(event_id: str, current_admin: str = Depends(verify_token), db: SupabaseDB = Depends(get_db)):
     event = db.query(DBEvent).filter(DBEvent.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -640,21 +641,21 @@ async def delete_event(event_id: str, current_admin: str = Depends(verify_token)
 
 # Admin announcement endpoints
 @app.get("/api/admin/announcements")
-async def admin_get_announcements(current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
-    announcements = db.query(DBannouncement).order_by(DBannouncement.created_at.desc()).all()
+async def admin_get_announcements(current_admin: str = Depends(verify_token), db: SupabaseDB = Depends(get_db)):
+    announcements = db.get_all_announcements()
     return [
         {
-            "id": announcement.id,
-            "title": announcement.title,
-            "content": announcement.content,
-            "date": announcement.date,
-            "icon": getattr(announcement, 'icon', 'Megaphone'),
-            "created_at": announcement.created_at
+            "id": announcement["id"],
+            "title": announcement["title"],
+            "content": announcement["content"],
+            "date": announcement["date"],
+            "icon": announcement.get("icon", "Megaphone"),
+            "created_at": announcement["created_at"]
         } for announcement in announcements
     ]
 
 @app.post("/api/admin/announcements")
-async def create_announcement(announcement: Announcement, current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
+async def create_announcement(announcement: Announcement, current_admin: str = Depends(verify_token), db: SupabaseDB = Depends(get_db)):
     new_announcement = DBannouncement(
         id=str(uuid.uuid4()),
         title=announcement.title,
@@ -672,7 +673,7 @@ async def update_announcement(
     announcement_id: str, 
     announcement: Announcement, 
     current_admin: str = Depends(verify_token), 
-    db: Session = Depends(get_db)
+    db: SupabaseDB = Depends(get_db)
 ):
     db_announcement = db.query(DBannouncement).filter(DBannouncement.id == announcement_id).first()
     if not db_announcement:
@@ -701,7 +702,7 @@ async def update_announcement(
     }
 
 @app.delete("/api/admin/announcements/{announcement_id}")
-async def delete_announcement(announcement_id: str, current_admin: str = Depends(verify_token), db: Session = Depends(get_db)):
+async def delete_announcement(announcement_id: str, current_admin: str = Depends(verify_token), db: SupabaseDB = Depends(get_db)):
     announcement = db.query(DBannouncement).filter(DBannouncement.id == announcement_id).first()
     if not announcement:
         raise HTTPException(status_code=404, detail="Announcement not found")
