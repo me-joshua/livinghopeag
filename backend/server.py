@@ -4,20 +4,40 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import List, Optional
 import os
+import sys
+import traceback
 from datetime import datetime, timedelta
 import uuid
 import json
 from jose import JWTError, jwt, ExpiredSignatureError
 from dotenv import load_dotenv
 
+print("🚀 FastAPI server starting...")
+print(f"Python version: {sys.version}")
+print(f"Working directory: {os.getcwd()}")
+
 # Load environment variables
 load_dotenv()
 
 # Import database functions
 try:
+    print("📦 Attempting to import database...")
     from database import get_db, create_tables, verify_password, SupabaseDB
-except ImportError:
+    print("✅ Database import successful")
+except ImportError as e:
+    print(f"⚠️ Database import failed: {e}")
+    print(f"🔍 Full traceback: {traceback.format_exc()}")
     # Fallback for serverless environment
+    SupabaseDB = None
+    def get_db():
+        return None
+    def create_tables():
+        pass
+    def verify_password(password, hashed):
+        return False
+except Exception as e:
+    print(f"❌ Unexpected error importing database: {e}")
+    print(f"🔍 Full traceback: {traceback.format_exc()}")
     SupabaseDB = None
     def get_db():
         return None
@@ -719,11 +739,48 @@ async def delete_announcement(announcement_id: str, current_admin: str = Depends
 # Health check endpoint (always available)
 @app.get("/")
 async def root():
-    return {"status": "Living Hope AG API is running", "timestamp": datetime.now()}
+    try:
+        print("🔍 Root endpoint called")
+        return {"status": "Living Hope AG API is running", "timestamp": datetime.now()}
+    except Exception as e:
+        print(f"❌ Root endpoint failed: {e}")
+        return {"status": "error", "message": str(e)}
 
 @app.get("/api/health")
 async def health_check():
-    return {"status": "healthy", "timestamp": datetime.now()}
+    try:
+        print("🔍 Health check called")
+        status = {
+            "status": "healthy",
+            "timestamp": datetime.now(),
+            "python_version": sys.version,
+            "working_directory": os.getcwd(),
+            "environment_vars": {
+                "SUPABASE_URL": "✅ Set" if os.getenv("SUPABASE_URL") else "❌ Missing",
+                "SUPABASE_SERVICE_ROLE_KEY": "✅ Set" if os.getenv("SUPABASE_SERVICE_ROLE_KEY") else "❌ Missing"
+            }
+        }
+        
+        # Test database connection if available
+        if SupabaseDB:
+            try:
+                db_instance = get_db()
+                if db_instance and hasattr(db_instance, 'get_client'):
+                    client = db_instance.get_client()
+                    status["database"] = "✅ Connected" if client else "❌ Connection failed"
+                else:
+                    status["database"] = "❌ No database instance"
+            except Exception as e:
+                status["database"] = f"❌ Error: {str(e)}"
+        else:
+            status["database"] = "❌ Database module not available"
+        
+        print(f"✅ Health check response: {status}")
+        return status
+    except Exception as e:
+        print(f"❌ Health check failed: {e}")
+        print(f"🔍 Full traceback: {traceback.format_exc()}")
+        return {"status": "error", "message": str(e), "traceback": traceback.format_exc()}
 
 # Initialize database on first import (for serverless)
 try:
