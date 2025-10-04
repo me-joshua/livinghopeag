@@ -10,9 +10,26 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Database setup
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./livinghope.db")
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+# Database setup - PostgreSQL for production, SQLite for development fallback
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL is None:
+    # Development fallback
+    DATABASE_URL = "sqlite:///./livinghope.db"
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    # Production PostgreSQL
+    # Handle both postgres:// and postgresql:// schemes (some services still use postgres://)
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,  # Verify connections before use
+        pool_recycle=300,    # Recycle connections every 5 minutes
+        echo=False           # Set to True for SQL debugging
+    )
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
