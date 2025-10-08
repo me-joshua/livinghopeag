@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import './App.css';
+import GalleryLightbox from './components/GalleryLightbox';
 
 // API Base URL - use environment variable or fallback to localhost
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8001';
@@ -25,7 +26,7 @@ import {
   MessageSquare,
   ChevronDown,
   Clock,
-  Map,
+  Map as MapIcon,
   Church,
   Sparkles,
   HandHeart,
@@ -41,7 +42,7 @@ import {
   Youtube,
   Instagram,
   Facebook,
-  Image,
+  Image as ImageIcon,
   Edit,
   CreditCard,
   Building,
@@ -487,6 +488,70 @@ const getDriveFolderEmbedUrl = (folderUrl) => {
   return `https://drive.google.com/embeddedfolderview?id=${folderId}#grid`;
 };
 
+// Enhanced thumbnail component with shared cache
+const ThumbnailCard = ({ file, index, onClick, isLoaded, cache }) => {
+  const [imageState, setImageState] = useState(isLoaded ? 'loaded' : 'loading');
+
+  // Check if image is already loaded in cache
+  useEffect(() => {
+    if (isLoaded) {
+      setImageState('loaded');
+    } else {
+      // If not in cache, start loading
+      const img = new window.Image();
+      img.onload = () => setImageState('loaded');
+      img.onerror = () => setImageState('error');
+      img.src = file.thumbnail;
+    }
+  }, [file.thumbnail, isLoaded]);
+
+  return (
+    <button
+      onClick={onClick}
+      className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer bg-gray-100 hover:ring-4 hover:ring-blue-500 transition-all duration-200 transform hover:scale-105"
+    >
+      {/* Loading skeleton - only show if not loaded */}
+      {imageState === 'loading' && (
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse">
+          <div className="absolute inset-4 bg-gray-100 rounded-lg animate-pulse"></div>
+        </div>
+      )}
+
+      {/* Image - always render but with opacity control */}
+      <img
+        src={file.thumbnail}
+        alt={`Gallery item ${index + 1}`}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${
+          imageState === 'loaded' ? 'opacity-100' : 'opacity-0'
+        }`}
+        onLoad={() => setImageState('loaded')}
+        onError={() => setImageState('error')}
+        style={{
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          MozUserSelect: 'none',
+          msUserSelect: 'none',
+          pointerEvents: 'none'
+        }}
+        onContextMenu={(e) => e.preventDefault()}
+        onDragStart={(e) => e.preventDefault()}
+      />
+
+      {/* Video indicator */}
+      {file.type === 'video' && imageState === 'loaded' && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="bg-black bg-opacity-60 rounded-full p-3">
+            <Play className="h-8 w-8 text-white" fill="white" />
+          </div>
+        </div>
+      )}
+
+      {/* Hover overlay */}
+      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200"></div>
+    </button>
+  );
+};
+
 // ScrollToTop component to handle scroll position on route changes
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -506,6 +571,14 @@ const EventDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [resolvedMapUrl, setResolvedMapUrl] = useState(null);
+  const [galleryFiles, setGalleryFiles] = useState([]);
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  
+  // Global thumbnail cache for better performance and reuse
+  const [thumbnailCache, setThumbnailCache] = useState(new window.Map());
+  const [loadedThumbnails, setLoadedThumbnails] = useState(new window.Set());
 
   useEffect(() => {
     const fetchEventDetail = async () => {
@@ -551,6 +624,54 @@ const EventDetailPage = () => {
       fetchEventDetail();
     }
   }, [eventId]);
+
+  // Fetch gallery files when event detail is loaded
+  useEffect(() => {
+    const fetchGalleryFiles = async () => {
+      if (!eventDetail || !eventDetail.gallery_folder_url) return;
+      
+      setGalleryLoading(true);
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/events/${eventId}/gallery`);
+        if (response.ok) {
+          const result = await response.json();
+          const files = result.data || [];
+          setGalleryFiles(files);
+          
+          // Preload all thumbnails immediately after fetching gallery data
+          preloadAllThumbnails(files);
+        }
+      } catch (error) {
+        console.error('Failed to fetch gallery files:', error);
+      } finally {
+        setGalleryLoading(false);
+      }
+    };
+
+    fetchGalleryFiles();
+  }, [eventDetail, eventId]);
+
+  // Preload all thumbnails for immediate display and reuse
+  const preloadAllThumbnails = (files) => {
+    files.forEach(file => {
+      if (!loadedThumbnails.has(file.id)) {
+        const img = new window.Image();
+        img.onload = () => {
+          setLoadedThumbnails(prev => new window.Set([...prev, file.id]));
+          setThumbnailCache(prev => new window.Map(prev.set(file.id, img)));
+        };
+        img.onerror = () => {
+          console.warn('Failed to preload thumbnail for:', file.id);
+        };
+        img.src = file.thumbnail;
+      }
+    });
+  };
+
+  const handleThumbnailClick = (index) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
 
   if (loading) {
     return (
@@ -722,59 +843,68 @@ const EventDetailPage = () => {
         )}
 
         {/* Gallery Section */}
-        <div className="bg-white rounded-lg shadow-lg p-4 md:p-6 lg:p-8 mb-4 md:mb-8">
-          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800 mb-4 flex items-center">
-            <Image className="h-5 w-5 md:h-6 md:w-6 mr-2 text-blue-600 flex-shrink-0" />
-            Event Gallery
-          </h2>
-          
-          {!eventDetail.gallery_folder_url || !extractDriveFolderId(eventDetail.gallery_folder_url) ? (
-            isPastEvent ? (
-              <div className="text-center py-8 md:py-12">
-                <Image className="h-10 w-10 md:h-12 md:w-12 lg:h-16 lg:w-16 mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-600 text-sm md:text-base lg:text-lg">Gallery photos are being processed.</p>
-                <p className="text-gray-500 mt-2 text-xs md:text-sm">Photos from this event will be available soon!</p>
-              </div>
-            ) : (
-              <div className="text-center py-8 md:py-12">
-                <Clock className="h-10 w-10 md:h-12 md:w-12 lg:h-16 lg:w-16 mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-600 text-sm md:text-base lg:text-lg">Check back after the event!</p>
-                <p className="text-gray-500 mt-2 text-xs md:text-sm">Photos will be available once the event is completed.</p>
-              </div>
-            )
-          ) : (
-            <div className="space-y-4">
-              {/* Open in Drive Button */}
-              <div className="flex justify-end">
-                <a
-                  href={eventDetail.gallery_folder_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
-                >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Open in Google Drive
-                </a>
-              </div>
-              
-              {/* Embedded Google Drive Folder View */}
-              <div className="w-full rounded-lg overflow-hidden border border-gray-300 shadow-inner">
-                <iframe
-                  src={getDriveFolderEmbedUrl(eventDetail.gallery_folder_url)}
-                  className="w-full h-[500px] md:h-[600px] lg:h-[700px]"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  title="Event Gallery"
-                />
-              </div>
-              
-              <p className="text-xs text-gray-500 text-center">
-                📸 Click on any photo or video to view in full screen • Videos can be played directly in the viewer
-              </p>
+        {eventDetail.gallery_folder_url && extractDriveFolderId(eventDetail.gallery_folder_url) && (
+          <div className="bg-white rounded-lg shadow-lg p-4 md:p-6 lg:p-8 mb-4 md:mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800 flex items-center">
+                <ImageIcon className="h-5 w-5 md:h-6 md:w-6 mr-2 text-blue-600 flex-shrink-0" />
+                Event Gallery
+              </h2>
             </div>
-          )}
-        </div>
+            
+            {galleryLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading gallery...</p>
+              </div>
+            ) : galleryFiles.length === 0 ? (
+              isPastEvent ? (
+                <div className="text-center py-8 md:py-12">
+                  <ImageIcon className="h-10 w-10 md:h-12 md:w-12 lg:h-16 lg:w-16 mx-auto mb-4 text-gray-400" />
+                  <p className="text-gray-600 text-sm md:text-base lg:text-lg">Gallery photos are being processed.</p>
+                  <p className="text-gray-500 mt-2 text-xs md:text-sm">Photos from this event will be available soon!</p>
+                </div>
+              ) : (
+                <div className="text-center py-8 md:py-12">
+                  <Clock className="h-10 w-10 md:h-12 md:w-12 lg:h-16 lg:w-16 mx-auto mb-4 text-gray-400" />
+                  <p className="text-gray-600 text-sm md:text-base lg:text-lg">Check back after the event!</p>
+                  <p className="text-gray-500 mt-2 text-xs md:text-sm">Photos will be available once the event is completed.</p>
+                </div>
+              )
+            ) : (
+              <>
+                {/* Thumbnail Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
+                  {galleryFiles.map((file, index) => (
+                    <ThumbnailCard 
+                      key={file.id}
+                      file={file}
+                      index={index}
+                      onClick={() => handleThumbnailClick(index)}
+                      isLoaded={loadedThumbnails.has(file.id)}
+                      cache={thumbnailCache}
+                    />
+                  ))}
+                </div>
+                
+                <p className="text-xs text-gray-500 text-center mt-4">
+                  📸 Click on any thumbnail to view in full screen • Use arrow keys or buttons to navigate
+                </p>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Lightbox Viewer */}
+        {lightboxOpen && galleryFiles.length > 0 && (
+          <GalleryLightbox
+            files={galleryFiles}
+            initialIndex={lightboxIndex}
+            onClose={() => setLightboxOpen(false)}
+            loadedThumbnails={loadedThumbnails}
+            thumbnailCache={thumbnailCache}
+          />
+        )}
 
         {/* Contact Information */}
         {eventDetail.contact_info && !isPastEvent && (
@@ -4047,7 +4177,7 @@ Living Hope AG Team`;
               {/* Event Gallery Folder */}
               <div className="border-t pt-4 mt-4">
                 <h5 className="font-semibold mb-2 flex items-center gap-2">
-                  <Image className="h-5 w-5 text-purple-600" />
+                  <ImageIcon className="h-5 w-5 text-purple-600" />
                   Event Gallery (Google Drive Folder)
                 </h5>
                 <p className="text-xs text-gray-500 mb-3">
@@ -4203,7 +4333,7 @@ Living Hope AG Team`;
                       {/* Event Gallery Folder */}
                       <div className="border-t pt-4 mt-4">
                         <h5 className="font-semibold mb-2 flex items-center gap-2">
-                          <Image className="h-5 w-5 text-purple-600" />
+                          <ImageIcon className="h-5 w-5 text-purple-600" />
                           Event Gallery (Google Drive Folder)
                         </h5>
                         <p className="text-xs text-gray-500 mb-3">

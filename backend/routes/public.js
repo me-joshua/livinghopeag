@@ -362,22 +362,36 @@ router.get('/events/:id/gallery', async (req, res) => {
       });
     }
 
-    // Fetch files from the folder
+    // Fetch files from the folder using HTTPS module
     const apiUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=files(id,name,mimeType,thumbnailLink,webContentLink,webViewLink)&key=${apiKey}`;
     
-    const response = await fetch(apiUrl);
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('Google Drive API error:', data);
-      return res.status(response.status).json({
-        success: false,
-        error: data.error?.message || 'Failed to fetch gallery files'
+    const driveData = await new Promise((resolve, reject) => {
+      https.get(apiUrl, (response) => {
+        let data = '';
+        
+        response.on('data', (chunk) => {
+          data += chunk;
+        });
+        
+        response.on('end', () => {
+          try {
+            const parsed = JSON.parse(data);
+            if (response.statusCode === 200) {
+              resolve(parsed);
+            } else {
+              reject(new Error(parsed.error?.message || 'Failed to fetch gallery files'));
+            }
+          } catch (e) {
+            reject(e);
+          }
+        });
+      }).on('error', (error) => {
+        reject(error);
       });
-    }
+    });
 
     // Filter and format files
-    const files = (data.files || [])
+    const files = (driveData.files || [])
       .filter(file => {
         const isImage = file.mimeType?.startsWith('image/');
         const isVideo = file.mimeType?.startsWith('video/');
@@ -388,11 +402,15 @@ router.get('/events/:id/gallery', async (req, res) => {
         name: file.name,
         type: file.mimeType?.startsWith('image/') ? 'image' : 'video',
         mimeType: file.mimeType,
-        thumbnail: file.thumbnailLink || `https://drive.google.com/thumbnail?id=${file.id}&sz=w400`,
-        url: `https://drive.google.com/uc?export=view&id=${file.id}`,
+        // Use public thumbnail endpoint that works without authentication
+        thumbnail: `https://drive.google.com/thumbnail?sz=w400&id=${file.id}`,
+        // Multiple URL options for better fallback  
+        url: `https://lh3.googleusercontent.com/d/${file.id}=w1920-h1080-rw`,
+        // Alternative URLs for fallback
+        fallbackUrl: `https://drive.google.com/uc?export=view&id=${file.id}`,
         previewUrl: file.mimeType?.startsWith('video/') 
           ? `https://drive.google.com/file/d/${file.id}/preview`
-          : `https://drive.google.com/uc?export=view&id=${file.id}`
+          : `https://lh3.googleusercontent.com/d/${file.id}=w1920-h1080-rw`
       }));
 
     res.json({
