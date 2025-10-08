@@ -2725,7 +2725,9 @@ Living Hope AG Team`;
             {/* Past Events Section */}
             {(() => {
               const currentDate = new Date();
-              const pastEvents = (Array.isArray(events) ? events : []).filter(event => new Date(event.date) < currentDate);
+              const pastEvents = (Array.isArray(events) ? events : [])
+                .filter(event => new Date(event.date) < currentDate)
+                .sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date, most recent first
               
               if (pastEvents.length > 0) {
                 return (
