@@ -1,28 +1,61 @@
-{
-  "rewrites": [
-    {
-      "source": "/api/admin/login",
-      "destination": "/api/admin/login"
-    },
-    {
-      "source": "/api/admin/contact-forms",
-      "destination": "/api/admin-contact-forms"
-    },
-    {
-      "source": "/api/admin/events",
-      "destination": "/api/admin-events"
-    },
-    {
-      "source": "/api/admin/announcements",
-      "destination": "/api/admin-announcements"
-    },
-    {
-      "source": "/api/admin/media",
-      "destination": "/api/admin-media"
-    },
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
+{{
+
+  "rewrites": [  "rewrites": [
+
+    {    {
+
+      "source": "/api/admin/:path*",      "source": "/api/admin/login",
+
+      "destination": "/api/admin"      "destination": "/api/admin/login"
+
+    },    },
+
+    {    {
+
+      "source": "/api/announcements",      "source": "/api/admin/contact-forms",
+
+      "destination": "/api/public"      "destination": "/api/admin-contact-forms"
+
+    },    },
+
+    {    {
+
+      "source": "/api/events",      "source": "/api/admin/events",
+
+      "destination": "/api/public"      "destination": "/api/admin-events"
+
+    },    },
+
+    {    {
+
+      "source": "/api/media",      "source": "/api/admin/announcements",
+
+      "destination": "/api/public"      "destination": "/api/admin-announcements"
+
+    },    },
+
+    {    {
+
+      "source": "/api/church-info",      "source": "/api/admin/media",
+
+      "destination": "/api/public"      "destination": "/api/admin-media"
+
+    },    },
+
+    {    {
+
+      "source": "/api/contact",      "source": "/api/(.*)",
+
+      "destination": "/api/public"      "destination": "/api/$1"
+
+    }    }
+
+  ],  ]
+
+  "functions": {}
+    "api/**/*.js": {
+      "memory": 1024,
+      "maxDuration": 10
     }
-  ]
+  }
 }
