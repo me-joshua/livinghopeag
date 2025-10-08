@@ -354,6 +354,22 @@ const convertToGoogleMapsEmbed = (location) => {
       return `https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
     }
     
+    // Handle URLs like: https://www.google.com/maps/search/22.868934,+57.546221
+    if (location.includes('/maps/search/')) {
+      const searchMatch = location.match(/\/maps\/search\/([^?&]+)/);
+      if (searchMatch) {
+        const searchQuery = decodeURIComponent(searchMatch[1]);
+        // Check if it's coordinates
+        const coordMatch = searchQuery.match(/(-?\d+\.?\d*)[,\s]+\+?(-?\d+\.?\d*)/);
+        if (coordMatch) {
+          const [, lat, lng] = coordMatch;
+          return `https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+        }
+        // Otherwise use the search query as is
+        return `https://maps.google.com/maps?q=${encodeURIComponent(searchQuery)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+      }
+    }
+    
     // Handle standard /maps URLs by converting to embed format
     if (location.includes('/maps?')) {
       const urlParams = new URLSearchParams(location.split('?')[1]);
@@ -370,11 +386,21 @@ const convertToGoogleMapsEmbed = (location) => {
       }) || `${location}&output=embed`;
     }
     
-    // If it's a Google Maps share URL, extract what we can
+    // If it's a Google Maps share URL (shortened URLs)
+    // These should be resolved by the backend before calling this function
     if (location.includes('goo.gl/maps') || location.includes('maps.app.goo.gl')) {
-      // For shortened URLs, we'll need to use them as-is but convert to embed
-      const baseUrl = location.split('?')[0];
-      return `https://maps.google.com/maps?q=${encodeURIComponent(baseUrl)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+      // If we still get a shortened URL here, try to use it anyway
+      return `https://maps.google.com/maps?q=${encodeURIComponent(location)}&output=embed`;
+    }
+    
+    // Handle regular google.com/maps URLs with place IDs
+    if (location.includes('google.com/maps') && location.includes('/place/')) {
+      // Try to extract coordinates from the URL
+      const coordMatch = location.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+      if (coordMatch) {
+        const [, lat, lng] = coordMatch;
+        return `https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+      }
     }
   }
   
@@ -385,6 +411,80 @@ const convertToGoogleMapsEmbed = (location) => {
   
   // Default fallback - try to convert any URL to show a pin
   return `https://maps.google.com/maps?q=${encodeURIComponent(location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+};
+
+// Helper function to extract Google Drive file ID from various URL formats
+const extractDriveFileId = (url) => {
+  if (!url) return null;
+  
+  // Direct file ID (25-33 characters, alphanumeric with hyphens and underscores)
+  if (/^[\w-]{25,33}$/.test(url)) {
+    return url;
+  }
+  
+  // https://drive.google.com/file/d/FILE_ID/view
+  const fileMatch = url.match(/\/file\/d\/([\w-]{25,33})/);
+  if (fileMatch) return fileMatch[1];
+  
+  // https://drive.google.com/open?id=FILE_ID
+  const openMatch = url.match(/[?&]id=([\w-]{25,33})/);
+  if (openMatch) return openMatch[1];
+  
+  // https://drive.google.com/uc?id=FILE_ID
+  const ucMatch = url.match(/\/uc\?.*id=([\w-]{25,33})/);
+  if (ucMatch) return ucMatch[1];
+  
+  return null;
+};
+
+// Helper function to extract Google Drive folder ID from various URL formats
+const extractDriveFolderId = (url) => {
+  if (!url) return null;
+  
+  // Direct folder ID (25-33 characters)
+  if (/^[\w-]{25,33}$/.test(url)) {
+    return url;
+  }
+  
+  // https://drive.google.com/drive/folders/FOLDER_ID
+  const folderMatch = url.match(/\/folders\/([\w-]{25,33})/);
+  if (folderMatch) return folderMatch[1];
+  
+  // https://drive.google.com/drive/u/0/folders/FOLDER_ID
+  const uFolderMatch = url.match(/\/u\/\d+\/folders\/([\w-]{25,33})/);
+  if (uFolderMatch) return uFolderMatch[1];
+  
+  return null;
+};
+
+// Helper function to convert Google Drive URL to direct embed/view URL
+const convertDriveToEmbedUrl = (url, type = 'image') => {
+  const fileId = extractDriveFileId(url);
+  if (!fileId) return null;
+  
+  if (type === 'video') {
+    // For videos, use the preview URL
+    return `https://drive.google.com/file/d/${fileId}/preview`;
+  } else {
+    // For images, use the direct view URL (uc format for better compatibility)
+    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+  }
+};
+
+// Helper function to get thumbnail URL for Google Drive file
+const getDriveThumbnail = (url) => {
+  const fileId = extractDriveFileId(url);
+  if (!fileId) return null;
+  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
+};
+
+// Helper function to get embeddable Google Drive folder URL
+const getDriveFolderEmbedUrl = (folderUrl) => {
+  const folderId = extractDriveFolderId(folderUrl);
+  if (!folderId) return null;
+  
+  // Return the grid view embed URL for the folder
+  return `https://drive.google.com/embeddedfolderview?id=${folderId}#grid`;
 };
 
 // ScrollToTop component to handle scroll position on route changes
@@ -405,14 +505,37 @@ const EventDetailPage = () => {
   const [eventDetail, setEventDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [resolvedMapUrl, setResolvedMapUrl] = useState(null);
 
   useEffect(() => {
     const fetchEventDetail = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`);
         if (response.ok) {
-          const data = await response.json();
-          setEventDetail(data);
+          const result = await response.json();
+          setEventDetail(result.data);
+          
+          // If location is a shortened URL, resolve it
+          if (result.data.location && 
+              (result.data.location.includes('maps.app.goo.gl') || 
+               result.data.location.includes('goo.gl/maps'))) {
+            try {
+              const resolveResponse = await fetch(`${API_BASE_URL}/api/resolve-map-url`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: result.data.location })
+              });
+              
+              if (resolveResponse.ok) {
+                const resolveResult = await resolveResponse.json();
+                setResolvedMapUrl(resolveResult.data.resolvedUrl);
+              }
+            } catch (err) {
+              // If resolution fails, we'll still show the original URL
+            }
+          }
         } else {
           setError('Event not found');
         }
@@ -555,8 +678,14 @@ const EventDetailPage = () => {
             </h2>
             
             {(() => {
-              const embedUrl = convertToGoogleMapsEmbed(eventDetail.location);
-              const isMapUrl = eventDetail.location.includes('google.com/maps') || eventDetail.location.includes('maps.google.com') || /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/.test(eventDetail.location);
+              // Use resolved URL if available, otherwise use the original location
+              const locationToUse = resolvedMapUrl || eventDetail.location;
+              const embedUrl = convertToGoogleMapsEmbed(locationToUse);
+              const isMapUrl = eventDetail.location.includes('google.com/maps') || 
+                               eventDetail.location.includes('maps.google.com') || 
+                               eventDetail.location.includes('maps.app.goo.gl') ||
+                               eventDetail.location.includes('goo.gl/maps') ||
+                               /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/.test(eventDetail.location);
               
               return isMapUrl ? (
                 <div className="space-y-3 md:space-y-4">
@@ -570,18 +699,20 @@ const EventDetailPage = () => {
                     View on Google Maps
                   </a>
                   
-                  <div className="w-full h-48 md:h-56 lg:h-64 border border-gray-300 rounded-lg overflow-hidden">
-                    <iframe
-                      src={embedUrl}
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0 }}
-                      allowFullScreen=""
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      title="Event Location"
-                    />
-                  </div>
+                  {embedUrl ? (
+                    <div className="w-full h-48 md:h-56 lg:h-64 border border-gray-300 rounded-lg overflow-hidden">
+                      <iframe
+                        src={embedUrl}
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        allowFullScreen=""
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title="Event Location"
+                      />
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <p className="text-gray-600 text-sm md:text-base break-words">{eventDetail.location}</p>
@@ -597,17 +728,50 @@ const EventDetailPage = () => {
             Event Gallery
           </h2>
           
-          {isPastEvent ? (
-            <div className="text-center py-8 md:py-12">
-              <Image className="h-10 w-10 md:h-12 md:w-12 lg:h-16 lg:w-16 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-600 text-sm md:text-base lg:text-lg">Gallery photos are being processed.</p>
-              <p className="text-gray-500 mt-2 text-xs md:text-sm">Photos from this event will be available soon!</p>
-            </div>
+          {!eventDetail.gallery_folder_url || !extractDriveFolderId(eventDetail.gallery_folder_url) ? (
+            isPastEvent ? (
+              <div className="text-center py-8 md:py-12">
+                <Image className="h-10 w-10 md:h-12 md:w-12 lg:h-16 lg:w-16 mx-auto mb-4 text-gray-400" />
+                <p className="text-gray-600 text-sm md:text-base lg:text-lg">Gallery photos are being processed.</p>
+                <p className="text-gray-500 mt-2 text-xs md:text-sm">Photos from this event will be available soon!</p>
+              </div>
+            ) : (
+              <div className="text-center py-8 md:py-12">
+                <Clock className="h-10 w-10 md:h-12 md:w-12 lg:h-16 lg:w-16 mx-auto mb-4 text-gray-400" />
+                <p className="text-gray-600 text-sm md:text-base lg:text-lg">Check back after the event!</p>
+                <p className="text-gray-500 mt-2 text-xs md:text-sm">Photos will be available once the event is completed.</p>
+              </div>
+            )
           ) : (
-            <div className="text-center py-8 md:py-12">
-              <Clock className="h-10 w-10 md:h-12 md:w-12 lg:h-16 lg:w-16 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-600 text-sm md:text-base lg:text-lg">Check back after the event!</p>
-              <p className="text-gray-500 mt-2 text-xs md:text-sm">Photos will be available once the event is completed.</p>
+            <div className="space-y-4">
+              {/* Open in Drive Button */}
+              <div className="flex justify-end">
+                <a
+                  href={eventDetail.gallery_folder_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open in Google Drive
+                </a>
+              </div>
+              
+              {/* Embedded Google Drive Folder View */}
+              <div className="w-full rounded-lg overflow-hidden border border-gray-300 shadow-inner">
+                <iframe
+                  src={getDriveFolderEmbedUrl(eventDetail.gallery_folder_url)}
+                  className="w-full h-[500px] md:h-[600px] lg:h-[700px]"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="Event Gallery"
+                />
+              </div>
+              
+              <p className="text-xs text-gray-500 text-center">
+                📸 Click on any photo or video to view in full screen • Videos can be played directly in the viewer
+              </p>
             </div>
           )}
         </div>
@@ -722,7 +886,8 @@ const AppContent = () => {
     location: '',
     category: 'service',
     registration_required: false,
-    contact_info: ''
+    contact_info: '',
+    gallery_folder_url: ''
   });
   const [editingEvent, setEditingEvent] = useState(null);
   const [editEventData, setEditEventData] = useState({
@@ -733,7 +898,8 @@ const AppContent = () => {
     location: '',
     category: 'service',
     registration_required: false,
-    contact_info: ''
+    contact_info: '',
+    gallery_folder_url: ''
   });
 
   // Public sermons state
@@ -779,13 +945,6 @@ const AppContent = () => {
       const timeUntilExpiry = expirationTime - currentTime;
       const isExpired = timeUntilExpiry <= 30; // 30-second buffer
       
-      if (isExpired) {
-        console.log('Token expired check:');
-        console.log('Current time:', new Date(currentTime * 1000));
-        console.log('Token expires:', new Date(expirationTime * 1000));
-        console.log('Time until expiry (seconds):', Math.floor(timeUntilExpiry));
-      }
-      
       return isExpired;
     } catch (error) {
       console.error('Error parsing token:', error);
@@ -794,7 +953,6 @@ const AppContent = () => {
   };
 
   const handleTokenExpired = (reason = 'Session expired') => {
-    console.log('Token expired, logging out user');
     setAdminToken(null);
     localStorage.removeItem('adminToken');
     // Clear any other sensitive data
@@ -835,7 +993,6 @@ const AppContent = () => {
     
     if (adminToken) {
       const timeoutId = setTimeout(() => {
-        console.log('Session timeout - logging out due to inactivity');
         handleTokenExpired('Inactivity');
       }, SESSION_TIMEOUT);
       setSessionTimeoutId(timeoutId);
@@ -959,12 +1116,23 @@ const AppContent = () => {
     setSubmitMessage('');
 
     try {
+      // Map frontend field names to backend/database field names
+      const contactData = {
+        fullname: formData.fullName,
+        email: formData.email,
+        countrycode: formData.countryCode,
+        phone: formData.phone,
+        subject: formData.subject,
+        message: formData.message,
+        contact_permission: false
+      };
+
       const response = await fetch(`${API_BASE_URL}/api/contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(contactData),
       });
 
       if (response.ok) {
@@ -1034,11 +1202,11 @@ const AppContent = () => {
     const storedToken = localStorage.getItem('adminToken');
     if (storedToken) {
       if (isTokenExpired(storedToken)) {
-        console.log('Stored token is expired, clearing it');
+
         localStorage.removeItem('adminToken');
         setAdminToken(null);
       } else {
-        console.log('Valid token found, user remains logged in');
+
         setAdminToken(storedToken);
       }
     }
@@ -1098,7 +1266,7 @@ const AppContent = () => {
   const autoExtractFromURL = async (url) => {
     if (!url || !url.trim()) return;
 
-    console.log('Attempting to extract from URL:', url);
+
     setIsAutoExtracting(true);
 
     try {
@@ -1114,12 +1282,12 @@ const AppContent = () => {
           videoId = url.split('youtu.be/')[1].split('?')[0];
         }
 
-        console.log('Extracted video ID:', videoId);
+
 
         if (videoId) {
           try {
-            console.log('=== EXTRACTING YOUTUBE INFO USING BACKEND ===');
-            console.log('Video URL:', url);
+
+
             
             // Call our backend endpoint for YouTube extraction
             const response = await fetch(`${API_BASE_URL}/api/extract-youtube`, {
@@ -1132,7 +1300,7 @@ const AppContent = () => {
             
             if (response.ok) {
               const result = await response.json();
-              console.log('✅ Backend extraction successful:', result);
+
               
               if (result.success && result.data) {
                 title = result.data.title || '';
@@ -1141,10 +1309,10 @@ const AppContent = () => {
                 
                 const extractedDuration = result.data.duration || '';
                 
-                console.log('📹 Title:', title);
-                console.log('📝 Description:', description.substring(0, 100) + '...');
-                console.log('📅 Extracted Date:', extractedDate);
-                console.log('⏱️ Duration:', extractedDuration);
+
+
+
+
                 
                 // Update the form with extracted data
                 setTimeout(() => {
@@ -1160,15 +1328,15 @@ const AppContent = () => {
                   }));
                 }, 100);
               } else {
-                console.log('❌ Backend returned no data');
+
               }
             } else {
               const errorData = await response.json();
-              console.log('❌ Backend extraction failed:', errorData);
-              console.log('Status:', response.status);
+
+
             }
           } catch (error) {
-            console.log('❌ YouTube extraction failed:', error);
+
           }
         }
       } else if (url.includes('vimeo.com')) {
@@ -1181,7 +1349,7 @@ const AppContent = () => {
             
             if (response.ok) {
               const data = await response.json();
-              console.log('Vimeo response:', data);
+
               title = data.title || '';
               description = `A sermon from ${data.author_name || 'Living Hope AG'}. Watch this inspiring message.`;
               
@@ -1197,7 +1365,7 @@ const AppContent = () => {
                   const fullYear = year.length === 2 ? `20${year}` : year;
                   extractedDate = `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
                 } else {
-                  console.log('No date pattern found in Vimeo title');
+
                 }
               }
               
@@ -1212,7 +1380,7 @@ const AppContent = () => {
               }
             }
           } catch (error) {
-            console.log('Vimeo extraction failed:', error);
+
             // Don't use fallback values - let user fill manually
           }
         }
@@ -1220,7 +1388,7 @@ const AppContent = () => {
 
       // Update fields if we got data or use defaults
       if (title) {
-        console.log('Updating sermon with:', { title, description });
+
         setNewSermon(prev => ({
           ...prev,
           title: title,
@@ -1228,7 +1396,7 @@ const AppContent = () => {
         }));
       }
     } catch (error) {
-      console.log('Auto-extraction failed:', error);
+
     } finally {
       setIsAutoExtracting(false);
     }
@@ -1361,10 +1529,10 @@ const AppContent = () => {
           const expirationTime = payload.exp;
           const timeUntilExpiry = expirationTime - currentTime;
           
-          console.log('Token received:');
-          console.log('Current time:', new Date(currentTime * 1000));
-          console.log('Token expires:', new Date(expirationTime * 1000));
-          console.log('Time until expiry (minutes):', Math.floor(timeUntilExpiry / 60));
+
+
+
+
           
           // Only validate if token expires in less than 1 minute (very suspicious)
           if (timeUntilExpiry < 60) {
@@ -1420,7 +1588,7 @@ const AppContent = () => {
 
   const fetchContactMessages = async () => {
     if (!validateTokenAndLogout()) {
-      console.log('Token invalid or expired, user logged out');
+
       return;
     }
     
@@ -1428,16 +1596,16 @@ const AppContent = () => {
     const currentToken = adminToken || localStorage.getItem('adminToken');
     
     try {
-      console.log('Fetching contact messages with token:', currentToken?.substring(0, 20) + '...');
+
       const response = await fetch(`${API_BASE_URL}/api/admin/contact-forms`, {
         headers: { 'Authorization': `Bearer ${currentToken}` }
       });
       if (response.ok) {
         const data = await response.json();
-        console.log('Contact messages response:', data);
-        setContactMessages(data);
+
+        setContactMessages(data.data || []);
       } else if (response.status === 401) {
-        console.log('Unauthorized - token may be expired');
+
         handleTokenExpired('Session expired');
       } else {
         console.error('Failed to fetch contact messages, status:', response.status);
@@ -1458,7 +1626,7 @@ const AppContent = () => {
         // Update the local state to mark message as read
         setContactMessages(prev => 
           prev.map(msg => 
-            msg.id === messageId ? { ...msg, isRead: true } : msg
+            msg.id === messageId ? { ...msg, isread: true } : msg
           )
         );
       } else if (response.status === 401) {
@@ -1471,17 +1639,17 @@ const AppContent = () => {
 
   const fetchAdminSermons = async () => {
     if (!adminToken) return;
-    console.log('Fetching admin sermons with token:', adminToken?.substring(0, 20) + '...');
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/media`, {
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
-      console.log('Admin media response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
-        console.log('Admin media response data:', data);
-        setAdminSermons(data.media || []);  // Handle new response structure
-        console.log('Set adminSermons to:', data.media || []);
+
+        setAdminSermons(data.data || []);
+
       } else {
         console.error('Failed to fetch admin media, status:', response.status);
       }
@@ -1543,18 +1711,22 @@ const AppContent = () => {
   const generateWhatsAppLink = (message) => {
     // Use the phone number directly with country code (no auto-modification)
     // Format: Remove + and any spaces/dashes for WhatsApp URL
-    const phoneNumber = (message.countryCode + message.phone).replace(/[\s\-\+]/g, '') || '';
+    const phoneNumber = ((message.countrycode || message.countryCode || '') + (message.phone || '')).replace(/[\s\-\+]/g, '');
     
     if (!phoneNumber) {
       return '#'; // Return dummy link if no phone number
     }
     
     // Create reply message template
-    const replyMessage = `Hi ${message.fullName}! 
+    const fullName = message.fullname || message.fullName || 'there';
+    const subject = message.subject || 'your inquiry';
+    const messageText = message.message || '';
+    
+    const replyMessage = `Hi ${fullName}! 
 
-Thank you for contacting Living Hope AG regarding "${message.subject}".
+Thank you for contacting Living Hope AG regarding "${subject}".
 
-We received your message: "${message.message.substring(0, 100)}${message.message.length > 100 ? '...' : ''}"
+We received your message: "${messageText.substring(0, 100)}${messageText.length > 100 ? '...' : ''}"
 
 We'd love to help you further. How can we assist you?
 
@@ -1641,17 +1813,17 @@ Living Hope AG Team`;
   // Event management functions
   const fetchAdminEvents = async () => {
     if (!adminToken) return;
-    console.log('Fetching admin events with token:', adminToken?.substring(0, 20) + '...');
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/events`, {
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
-      console.log('Admin events response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
-        console.log('Admin events response data:', data);
-        setAdminEvents(data);
-        console.log('Set adminEvents to:', data);
+
+        setAdminEvents(data.data || []);
+
       } else {
         console.error('Failed to fetch admin events, status:', response.status);
       }
@@ -1682,7 +1854,8 @@ Living Hope AG Team`;
           location: '',
           category: 'service',
           registration_required: false,
-          contact_info: ''
+          contact_info: '',
+          gallery_folder_url: ''
         });
         fetchAdminEvents();
         alert('Event added successfully!');
@@ -1725,7 +1898,8 @@ Living Hope AG Team`;
       location: event.location,
       category: event.category,
       registration_required: event.registration_required,
-      contact_info: event.contact_info || ''
+      contact_info: event.contact_info || '',
+      gallery_folder_url: event.gallery_folder_url || ''
     });
   };
 
@@ -1739,7 +1913,8 @@ Living Hope AG Team`;
       location: '',
       category: 'service',
       registration_required: false,
-      contact_info: ''
+      contact_info: '',
+      gallery_folder_url: ''
     });
   };
 
@@ -1779,7 +1954,7 @@ Living Hope AG Team`;
       });
       if (response.ok) {
         const data = await response.json();
-        setAdminAnnouncements(data);
+        setAdminAnnouncements(data.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch announcements', error);
@@ -3082,68 +3257,83 @@ Living Hope AG Team`;
           ) : (
             <div className="space-y-4">
               {contactMessages.map((message) => (
-                <div key={message.id} className={`border rounded-lg p-6 hover:bg-gray-50 transition-colors duration-200 ${
-                  message.isRead ? 'border-gray-200 bg-white' : 'border-blue-300 bg-white shadow-md'
+                <div key={message.id} className={`border-2 rounded-xl p-6 hover:shadow-lg transition-all duration-300 ${
+                  message.isread ? 'border-gray-200 bg-white' : 'border-blue-400 bg-gradient-to-br from-blue-50 to-white shadow-lg'
                 }`}>
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h4 className="font-bold text-xl text-gray-800">{message.fullName}</h4>
-                        {!message.isRead && (
-                          <span className="inline-flex items-center px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-full">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                            Unread
+                        <h4 className="font-bold text-xl text-gray-800">{message.fullname}</h4>
+                        {!message.isread && (
+                          <span className="inline-flex items-center px-3 py-1 text-sm font-semibold bg-blue-600 text-white rounded-full shadow-sm animate-pulse">
+                            <div className="w-2 h-2 bg-white rounded-full mr-2"></div>
+                            New Message
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 mb-1">{message.email}</p>
-                      <p className="text-sm text-gray-600">{message.phone ? `${message.countryCode || ''} ${message.phone}` : 'No phone provided'}</p>
+                      <p className="text-sm text-gray-600 mb-1 flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-gray-400" />
+                        {message.email}
+                      </p>
+                      <p className="text-sm text-gray-600 flex items-center gap-2">
+                        <MessageCircle className="h-4 w-4 text-gray-400" />
+                        {message.phone ? `${message.countrycode || ''} ${message.phone}` : 'No phone provided'}
+                      </p>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <span className="text-sm text-gray-500">{new Date(message.created_at).toLocaleDateString()}</span>
+                      <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                        {new Date(message.created_at).toLocaleDateString()}
+                      </span>
                       <button
                         onClick={() => deleteContactMessage(message.id)}
-                        className="text-red-600 hover:text-red-800 p-2 rounded transition-colors duration-200"
+                        className="text-red-600 hover:text-white hover:bg-red-600 p-2 rounded-lg transition-all duration-200"
                         title="Delete message"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-5 w-5" />
                       </button>
                     </div>
                   </div>
                   
                   <div className="mb-4">
-                    <p className="font-semibold text-blue-700 mb-3 text-lg">Subject: {message.subject}</p>
-                    <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
-                      <p className="text-gray-800 leading-relaxed">{message.message}</p>
+                    <p className="font-semibold text-blue-700 mb-3 text-lg flex items-center gap-2">
+                      {(() => {
+                        const subjectOption = SUBJECT_OPTIONS.find(opt => opt.value === message.subject);
+                        const IconComponent = subjectOption?.icon || MessageCircle;
+                        return <IconComponent className="h-5 w-5 text-blue-500" />;
+                      })()}
+                      Subject: {message.subject ? SUBJECT_OPTIONS.find(opt => opt.value === message.subject)?.label || message.subject : 'No subject'}
+                    </p>
+                    <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-5 rounded-xl border-l-4 border-blue-600 shadow-inner">
+                      <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">{message.message}</p>
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                  <div className="flex justify-between items-center pt-4 border-t-2 border-gray-100">
                     <div className="flex space-x-4">
                       <a 
                         href={`mailto:${message.email}`}
-                        className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-2 transition-colors duration-200"
+                        className="text-blue-600 hover:text-white hover:bg-blue-600 text-sm flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 border-2 border-blue-600 font-medium"
                       >
                         <Mail className="h-4 w-4" />
                         Reply via Email
                       </a>
-                      {message.phone && message.countryCode && (
+                      {message.phone && message.countrycode && (
                         <a 
                           href={generateWhatsAppLink(message)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-green-600 hover:text-green-800 text-sm flex items-center gap-2 transition-colors duration-200"
+                          className="text-green-600 hover:text-white hover:bg-green-600 text-sm flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 border-2 border-green-600 font-medium"
                         >
                           <MessageCircle className="h-4 w-4" />
-                          Reply in WhatsApp
+                          Reply on WhatsApp
                         </a>
                       )}
                     </div>
                     
-                    {!message.isRead && (
+                    {!message.isread && (
                       <button
                         onClick={() => markMessageAsRead(message.id)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors duration-200"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
                       >
                         <Eye className="h-4 w-4" />
                         Mark as Read
@@ -3853,6 +4043,33 @@ Living Hope AG Team`;
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 />
               )}
+              
+              {/* Event Gallery Folder */}
+              <div className="border-t pt-4 mt-4">
+                <h5 className="font-semibold mb-2 flex items-center gap-2">
+                  <Image className="h-5 w-5 text-purple-600" />
+                  Event Gallery (Google Drive Folder)
+                </h5>
+                <p className="text-xs text-gray-500 mb-3">
+                  📁 Paste the share link of a Google Drive folder containing event photos and videos
+                </p>
+                <input
+                  type="url"
+                  placeholder="https://drive.google.com/drive/folders/..."
+                  value={newEvent.gallery_folder_url}
+                  onChange={(e) => setNewEvent({...newEvent, gallery_folder_url: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                />
+                {newEvent.gallery_folder_url && extractDriveFolderId(newEvent.gallery_folder_url) && (
+                  <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Valid folder link detected
+                  </p>
+                )}
+              </div>
+
               <button
                 type="submit"
                 className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
@@ -3918,8 +4135,16 @@ Living Hope AG Team`;
                             <ChevronDown className="h-5 w-5 text-gray-400" />
                           </button>
                           
+                          {/* Click outside to close */}
                           {isEditEventCategoryDropdownOpen && (
-                            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-auto">
+                            <div 
+                              className="fixed inset-0 z-40" 
+                              onClick={() => setIsEditEventCategoryDropdownOpen(false)}
+                            ></div>
+                          )}
+                          
+                          {isEditEventCategoryDropdownOpen && (
+                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-auto">
                               {EVENT_CATEGORY_OPTIONS.map((option) => (
                                 <button
                                   key={option.value}
@@ -3935,14 +4160,6 @@ Living Hope AG Team`;
                                 </button>
                               ))}
                             </div>
-                          )}
-                          
-                          {/* Click outside to close */}
-                          {isEditEventCategoryDropdownOpen && (
-                            <div 
-                              className="fixed inset-0 z-40" 
-                              onClick={() => setIsEditEventCategoryDropdownOpen(false)}
-                            ></div>
                           )}
                         </div>
                       </div>
@@ -3982,6 +4199,33 @@ Living Hope AG Team`;
                           className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
                         />
                       )}
+                      
+                      {/* Event Gallery Folder */}
+                      <div className="border-t pt-4 mt-4">
+                        <h5 className="font-semibold mb-2 flex items-center gap-2">
+                          <Image className="h-5 w-5 text-purple-600" />
+                          Event Gallery (Google Drive Folder)
+                        </h5>
+                        <p className="text-xs text-gray-500 mb-3">
+                          📁 Paste the share link of a Google Drive folder containing event photos and videos
+                        </p>
+                        <input
+                          type="url"
+                          placeholder="https://drive.google.com/drive/folders/..."
+                          value={editEventData.gallery_folder_url}
+                          onChange={(e) => setEditEventData({...editEventData, gallery_folder_url: e.target.value})}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                        />
+                        {editEventData.gallery_folder_url && extractDriveFolderId(editEventData.gallery_folder_url) && (
+                          <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            Valid folder link detected
+                          </p>
+                        )}
+                      </div>
+
                       <div className="flex gap-2">
                         <button
                           type="submit"
@@ -4306,7 +4550,12 @@ Living Hope AG Team`;
 // Main App component with Router
 const App = () => {
   return (
-    <Router>
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}
+    >
       <AppContent />
     </Router>
   );

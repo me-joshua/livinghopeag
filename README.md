@@ -14,12 +14,13 @@ A modern, full-stack church website built with React and FastAPI, featuring even
 - **Admin Dashboard**: Complete CRUD operations for events, media, and announcements
 - **Donation/Giving**: Secure giving options with bank transfer details
 
-### Backend (FastAPI + SQLAlchemy)
+### Backend (Node.js + Express + Supabase)
 - **RESTful API**: Complete CRUD endpoints for all content types
 - **Admin Authentication**: Secure JWT-based admin system
-- **Database**: SQLite with SQLAlchemy ORM
+- **Database**: Supabase PostgreSQL
 - **Contact Management**: Store and manage contact form submissions
 - **CORS Support**: Configured for frontend integration
+- **YouTube Metadata Extraction**: Automatic video info extraction using youtube-dl
 
 ### Key Technical Features
 - **Enhanced Google Maps**: Converts various Google Maps URL formats to embeddable maps
@@ -39,12 +40,12 @@ A modern, full-stack church website built with React and FastAPI, featuring even
 - **Axios** - HTTP client
 
 ### Backend
-- **FastAPI 0.110.1** - Modern Python web framework
-- **SQLAlchemy 2.0+** - Python SQL toolkit and ORM
-- **Uvicorn** - ASGI server
-- **Pydantic 2.6+** - Data validation
-- **python-jose** - JWT handling
-- **bcrypt** - Password hashing
+- **Node.js 18+** - JavaScript runtime
+- **Express 4.x** - Web framework
+- **Supabase** - PostgreSQL database
+- **JWT (jsonwebtoken)** - Authentication tokens
+- **bcryptjs** - Password hashing
+- **youtube-dl** - YouTube metadata extraction (Python dependency)
 
 ## 📁 Project Structure
 
@@ -62,12 +63,16 @@ livinghopeag/
 │   ├── package.json
 │   ├── vite.config.js       # Vite configuration
 │   └── tailwind.config.js   # Tailwind CSS configuration
-├── backend/                 # FastAPI application
-│   ├── server.py           # Main FastAPI application
-│   ├── database.py         # Database models and configuration
-│   ├── main.py            # Entry point for deployment
-│   ├── requirements.txt   # Python dependencies
-│   └── livinghope.db      # SQLite database
+├── backend/                 # Express application
+│   ├── routes/             # API route handlers
+│   │   ├── admin.js       # Admin endpoints
+│   │   └── public.js      # Public endpoints
+│   ├── server.js          # Main Express application
+│   ├── database.js        # Supabase database client
+│   ├── auth.js           # JWT authentication
+│   ├── package.json      # Node.js dependencies
+│   ├── requirements.txt  # Python dependencies (yt-dlp)
+│   └── .env             # Environment variables
 └── .gitignore
 ```
 
@@ -75,7 +80,7 @@ livinghopeag/
 
 ### Prerequisites
 - Node.js 18+
-- Python 3.8+
+- Python 3.8+ (for yt-dlp)
 - Git
 
 ### Frontend Setup
@@ -86,24 +91,38 @@ npm run dev
 ```
 
 ### Backend Setup
+
+**Install Node.js dependencies:**
 ```bash
 cd backend
+npm install
+```
+
+**Install Python dependencies (for YouTube metadata extraction):**
+```bash
 pip install -r requirements.txt
-uvicorn server:app --reload --port 8001
+# Or directly: pip install yt-dlp
+```
+
+**Start the backend server:**
+```bash
+npm run dev
+# Or: node server.js
 ```
 
 ### Environment Variables
 
 **Frontend (.env)**
 ```
-REACT_APP_BACKEND_URL=http://localhost:8001
+VITE_API_BASE_URL=http://localhost:8001
 ```
 
 **Backend (.env)**
 ```
-SECRET_KEY=your-secret-key-here
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=your-admin-password
+SUPABASE_URL=your-supabase-url
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+JWT_SECRET=your-jwt-secret-key
+PORT=8001
 ```
 
 ## 📱 Usage
