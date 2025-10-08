@@ -4402,7 +4402,20 @@ Living Hope AG Team`;
                           </span>
                           <span className="flex items-center gap-1">
                             <MapPin className="h-4 w-4" />
-                            {event.location}
+                            {event.location && event.location.startsWith('http') ? (
+                              <a 
+                                href={event.location} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 underline"
+                              >
+                                {event.location.includes('google.com/maps') ? 'View on Google Maps' : 
+                                 event.location.includes('maps.apple.com') ? 'View on Apple Maps' :
+                                 'View Location'}
+                              </a>
+                            ) : (
+                              event.location
+                            )}
                           </span>
                         </p>
                         <p className="text-gray-700 mb-3">{event.description}</p>
