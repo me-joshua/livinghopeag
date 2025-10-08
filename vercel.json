@@ -1,58 +1,47 @@
-{{
-
-  "rewrites": [  "rewrites": [
-
-    {    {
-
-      "source": "/api/admin/:path*",      "source": "/api/admin/login",
-
-      "destination": "/api/admin"      "destination": "/api/admin/login"
-
-    },    },
-
-    {    {
-
-      "source": "/api/announcements",      "source": "/api/admin/contact-forms",
-
-      "destination": "/api/public"      "destination": "/api/admin-contact-forms"
-
-    },    },
-
-    {    {
-
-      "source": "/api/events",      "source": "/api/admin/events",
-
-      "destination": "/api/public"      "destination": "/api/admin-events"
-
-    },    },
-
-    {    {
-
-      "source": "/api/media",      "source": "/api/admin/announcements",
-
-      "destination": "/api/public"      "destination": "/api/admin-announcements"
-
-    },    },
-
-    {    {
-
-      "source": "/api/church-info",      "source": "/api/admin/media",
-
-      "destination": "/api/public"      "destination": "/api/admin-media"
-
-    },    },
-
-    {    {
-
-      "source": "/api/contact",      "source": "/api/(.*)",
-
-      "destination": "/api/public"      "destination": "/api/$1"
-
-    }    }
-
-  ],  ]
-
-  "functions": {}
+﻿{
+  "rewrites": [
+    {
+      "source": "/api/admin/login",
+      "destination": "/api/admin"
+    },
+    {
+      "source": "/api/admin/contact-forms",
+      "destination": "/api/admin"
+    },
+    {
+      "source": "/api/admin/announcements",
+      "destination": "/api/admin"
+    },
+    {
+      "source": "/api/admin/events",
+      "destination": "/api/admin"
+    },
+    {
+      "source": "/api/admin/media",
+      "destination": "/api/admin"
+    },
+    {
+      "source": "/api/announcements",
+      "destination": "/api/public"
+    },
+    {
+      "source": "/api/events",
+      "destination": "/api/public"
+    },
+    {
+      "source": "/api/media",
+      "destination": "/api/public"
+    },
+    {
+      "source": "/api/church-info",
+      "destination": "/api/public"
+    },
+    {
+      "source": "/api/contact",
+      "destination": "/api/public"
+    }
+  ],
+  "functions": {
     "api/**/*.js": {
       "memory": 1024,
       "maxDuration": 10
