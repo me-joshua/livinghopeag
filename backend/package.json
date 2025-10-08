@@ -10,6 +10,10 @@
   "keywords": ["church", "api", "express", "supabase"],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "bcryptjs": "^2.4.3",
