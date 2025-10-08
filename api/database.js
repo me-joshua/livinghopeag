@@ -241,6 +241,231 @@ class SupabaseDB {
       return [];
     }
   }
+
+  async createEvent(eventData) {
+    const client = this.getClient();
+    if (!client) return null;
+
+    try {
+      const data = {
+        id: uuidv4(),
+        ...eventData,
+        created_at: new Date().toISOString()
+      };
+
+      const { data: result, error } = await client
+        .from('events')
+        .insert(data)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating event:', error);
+        return null;
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error creating event:', error);
+      return null;
+    }
+  }
+
+  async updateEvent(id, eventData) {
+    const client = this.getClient();
+    if (!client) return null;
+
+    try {
+      const { data, error } = await client
+        .from('events')
+        .update(eventData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating event:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error updating event:', error);
+      return null;
+    }
+  }
+
+  async deleteEvent(id) {
+    const client = this.getClient();
+    if (!client) return false;
+
+    try {
+      const { error } = await client
+        .from('events')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting event:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      return false;
+    }
+  }
+
+  async createAnnouncement(announcementData) {
+    const client = this.getClient();
+    if (!client) return null;
+
+    try {
+      const data = {
+        id: uuidv4(),
+        ...announcementData,
+        created_at: new Date().toISOString()
+      };
+
+      const { data: result, error } = await client
+        .from('announcements')
+        .insert(data)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating announcement:', error);
+        return null;
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error creating announcement:', error);
+      return null;
+    }
+  }
+
+  async updateAnnouncement(id, announcementData) {
+    const client = this.getClient();
+    if (!client) return null;
+
+    try {
+      const { data, error } = await client
+        .from('announcements')
+        .update(announcementData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating announcement:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error updating announcement:', error);
+      return null;
+    }
+  }
+
+  async deleteAnnouncement(id) {
+    const client = this.getClient();
+    if (!client) return false;
+
+    try {
+      const { error } = await client
+        .from('announcements')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting announcement:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      return false;
+    }
+  }
+
+  async createMedia(mediaData) {
+    const client = this.getClient();
+    if (!client) return null;
+
+    try {
+      const data = {
+        id: uuidv4(),
+        ...mediaData,
+        created_at: new Date().toISOString()
+      };
+
+      const { data: result, error } = await client
+        .from('media')
+        .insert(data)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating media:', error);
+        return null;
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error creating media:', error);
+      return null;
+    }
+  }
+
+  async updateMedia(id, mediaData) {
+    const client = this.getClient();
+    if (!client) return null;
+
+    try {
+      const { data, error } = await client
+        .from('media')
+        .update(mediaData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating media:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error updating media:', error);
+      return null;
+    }
+  }
+
+  async deleteMedia(id) {
+    const client = this.getClient();
+    if (!client) return false;
+
+    try {
+      const { error } = await client
+        .from('media')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting media:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting media:', error);
+      return false;
+    }
+  }
 }
 
 // Utility functions
