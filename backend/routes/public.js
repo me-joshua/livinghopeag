@@ -4,6 +4,7 @@ const { exec } = require('child_process');
 const { promisify } = require('util');
 const https = require('https');
 const http = require('http');
+const ytdl = require('ytdl-core');
 
 const execPromise = promisify(exec);
 const router = express.Router();
@@ -173,30 +174,16 @@ router.post('/extract-youtube', async (req, res) => {
       });
     }
 
-    // Use yt-dlp to extract video metadata
-    const command = `yt-dlp --dump-json --no-warnings "${url}"`;
-    
-    const { stdout, stderr } = await execPromise(command, { 
-      maxBuffer: 1024 * 1024 * 10, // 10MB buffer
-      timeout: 30000 // 30 second timeout
-    });
-
-    if (stderr && !stdout) {
-      console.error('yt-dlp error:', stderr);
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to extract video metadata'
-      });
-    }
-
-    const videoInfo = JSON.parse(stdout);
+    // Use ytdl-core to extract video metadata
+    const videoInfo = await ytdl.getBasicInfo(url);
+    const details = videoInfo.videoDetails;
 
     // Extract the first line of description
-    const description = videoInfo.description || '';
+    const description = details.description || '';
     const firstLineDescription = description.split('\n')[0].trim();
 
     // Format duration (convert seconds to HH:MM:SS or MM:SS)
-    const durationSeconds = videoInfo.duration || 0;
+    const durationSeconds = parseInt(details.lengthSeconds) || 0;
     const hours = Math.floor(durationSeconds / 3600);
     const minutes = Math.floor((durationSeconds % 3600) / 60);
     const seconds = Math.floor(durationSeconds % 60);
@@ -208,15 +195,14 @@ router.post('/extract-youtube', async (req, res) => {
       formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
 
-    // Format upload date (YYYYMMDD to YYYY-MM-DD)
-    const uploadDate = videoInfo.upload_date || '';
-    const formattedDate = uploadDate ? 
-      `${uploadDate.substring(0, 4)}-${uploadDate.substring(4, 6)}-${uploadDate.substring(6, 8)}` : '';
+    // Format upload date
+    const uploadDate = details.publishDate || details.uploadDate || '';
+    const formattedDate = uploadDate ? new Date(uploadDate).toISOString().split('T')[0] : '';
 
     res.json({
       success: true,
       data: {
-        title: videoInfo.title || '',
+        title: details.title || '',
         description: firstLineDescription,
         date: formattedDate,
         duration: formattedDuration
@@ -225,18 +211,18 @@ router.post('/extract-youtube', async (req, res) => {
   } catch (error) {
     console.error('Error extracting YouTube metadata:', error);
     
-    // Check if it's a timeout or command not found error
-    if (error.killed) {
-      return res.status(504).json({
+    // Check for common ytdl-core errors
+    if (error.message.includes('Video unavailable')) {
+      return res.status(404).json({
         success: false,
-        error: 'Request timeout while extracting video metadata'
+        error: 'Video is unavailable or private'
       });
     }
     
-    if (error.message.includes('youtube-dl') || error.code === 'ENOENT') {
-      return res.status(500).json({
+    if (error.message.includes('Invalid URL')) {
+      return res.status(400).json({
         success: false,
-        error: 'youtube-dl is not installed. Please install it using: pip install youtube-dl or yt-dlp'
+        error: 'Invalid YouTube URL format'
       });
     }
 
