@@ -6,19 +6,19 @@
     },
     {
       "source": "/api/admin/contact-forms",
-      "destination": "/api/admin/contact-forms"
+      "destination": "/api/admin-contact-forms"
     },
     {
       "source": "/api/admin/events",
-      "destination": "/api/admin/events"
+      "destination": "/api/admin-events"
     },
     {
       "source": "/api/admin/announcements",
-      "destination": "/api/admin/announcements"
+      "destination": "/api/admin-announcements"
     },
     {
       "source": "/api/admin/media",
-      "destination": "/api/admin/media"
+      "destination": "/api/admin-media"
     },
     {
       "source": "/api/(.*)",
