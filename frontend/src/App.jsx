@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation,
 import './App.css';
 import GalleryLightbox from './components/GalleryLightbox';
 import Particles from './components/Particles';
-import GridMotion, { GridMotionPresets } from './components/GridMotion';
 
 // API Base URL - use environment variable or fallback to localhost
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8001';
@@ -2219,17 +2218,6 @@ Living Hope AG Team`;
     <div className="min-h-screen">
       {/* Hero Section with Auto-switching Images */}
       <div className="relative h-screen overflow-hidden hero-special">
-        {/* Modern Particle Background */}
-        <Particles
-          particleColors={['#ffffff', '#3b82f6']}
-          particleCount={150}
-          particleSpread={12}
-          speed={0.05}
-          moveParticlesOnHover={true}
-          alphaParticles={true}
-          disableRotation={false}
-        />
-        
         {/* Background Image - Current */}
         <div className="absolute inset-0">
           <img
@@ -2248,7 +2236,10 @@ Living Hope AG Team`;
           />
         </div>
         
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/30 via-purple-900/20 to-blue-900/30 z-10"></div>
+        <div className="absolute inset-0 gradient-flow opacity-70 z-10"></div>
+        
+        {/* Smudged bottom border for particles transition */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-50 via-gray-50/50 to-transparent z-20"></div>
         
         <div className="relative z-10 flex items-center justify-center h-full text-center text-white px-4">
           <div className="max-w-4xl fade-in">
@@ -2299,22 +2290,24 @@ Living Hope AG Team`;
       </div>
 
       {/* Announcements Section */}
-      <div className="relative py-16 bg-gradient-to-br from-slate-50 to-blue-50 overflow-hidden">
-        {/* Modern Particle Background */}
-        <Particles
-          particleColors={['#3b82f6', '#8b5cf6']}
-          particleCount={100}
-          particleSpread={8}
-          speed={0.03}
-          moveParticlesOnHover={false}
-          alphaParticles={true}
-          disableRotation={true}
-        />
-        
+      <div className="bg-gray-50 py-16 relative overflow-hidden">
+        <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 0 }}>
+          <Particles
+            particleColors={['#000000', '#000000ff']}
+            particleCount={10}
+            spread={10}
+            speed={0.5}
+            particleBaseSize={200}
+            alphaParticles={true}
+            disableRotation={false}
+          />
+        </div>
         <div className="max-w-7xl mx-auto px-4 relative z-10">
           <div className="flex justify-between items-center mb-8 md:mb-12">
             <h2 className="font-bold text-gray-800 fade-in" style={{
-              fontSize: 'clamp(1.5rem, 5vw + 0.5rem, 2.5rem)'
+              fontSize: 'clamp(1.5rem, 5vw + 0.5rem, 2.5rem)',
+              textShadow: '2px 2px 4px rgba(255, 255, 255, 0.8), -1px -1px 2px rgba(255, 255, 255, 0.8), 1px -1px 2px rgba(255, 255, 255, 0.8), -1px 1px 2px rgba(255, 255, 255, 0.8)',
+              WebkitTextStroke: '0.5px rgba(255, 255, 255, 0.5)'
             }}>
               Announcements
             </h2>
@@ -2337,8 +2330,8 @@ Living Hope AG Team`;
           </div>
           
           {announcements.length === 0 ? (
-            // Enhanced empty state with modern card background
-            <div className="text-center py-16 bg-card-modern rounded-2xl shadow-lg">
+            // No announcements message
+            <div className="text-center py-16">
               <div className="text-gray-400 mb-6">
                 <Megaphone className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-4 opacity-50" />
               </div>
@@ -2348,15 +2341,15 @@ Living Hope AG Team`;
               </p>
             </div>
           ) : (
-            // Enhanced announcements grid with GridMotion
-            <GridMotion 
-              items={(Array.isArray(announcements) ? announcements : []).slice(0, 3).map((announcement, index) => {
+            // Dynamic announcements - show only first 3 on home page
+            <div className="grid md:grid-cols-3 gap-8">
+              {(Array.isArray(announcements) ? announcements : []).slice(0, 3).map((announcement, index) => {
                 const iconConfig = getIconComponent(announcement.icon);
                 const IconComponent = iconConfig.component;
                 const iconColor = iconConfig.color;
                 
                 return (
-                  <div key={announcement.id} className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-6 card-hover relative border border-white/20">
+                  <div key={announcement.id} className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-6 card-hover stagger-animation relative">
                     {isNewAnnouncement(announcement.date) && (
                       <div className="absolute top-4 right-4 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold animate-pulse">
                         NEW
@@ -2378,13 +2371,7 @@ Living Hope AG Team`;
                   </div>
                 );
               })}
-              columns={3}
-              gap={32}
-              animationType="fadeUp"
-              animationDuration={0.8}
-              staggerDelay={0.15}
-              className="relative z-10"
-            />
+            </div>
           )}
         </div>
       </div>
@@ -2417,21 +2404,15 @@ Living Hope AG Team`;
   };
 
   const renderSermons = () => (
-    <div className="min-h-screen bg-mesh-gradient py-8 md:py-16 relative overflow-hidden">
-      <div className="floating-shapes">
-        <div className="floating-shape"></div>
-        <div className="floating-shape"></div>
-        <div className="floating-shape"></div>
-      </div>
-      
-      <div className="max-w-7xl mx-auto px-4 md:px-6 relative z-10">
+    <div className="min-h-screen bg-gray-50 py-8 md:py-16">
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
         <h2 className="font-bold text-center mb-6 md:mb-12 text-gray-800 fade-in" style={{
           fontSize: 'clamp(1.5rem, 5vw + 0.5rem, 2.5rem)'
         }}>
           Latest Media
         </h2>
         {sermons.length === 0 ? (
-          <div className="text-center py-12 bg-card-modern rounded-2xl shadow-lg">
+          <div className="text-center py-12">
             <div className="text-4xl md:text-6xl mb-4 opacity-50"><BookOpen className="h-12 w-12 md:h-16 md:w-16 mx-auto" /></div>
             <h3 className="text-lg md:text-2xl font-semibold text-gray-600 mb-2">No Media Available</h3>
             <p className="text-gray-500">Check back soon for new videos and content!</p>
@@ -2439,7 +2420,7 @@ Living Hope AG Team`;
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {(Array.isArray(sermons) ? sermons : []).map((sermon, index) => (
-              <div key={sermon.id || index} className="bg-card-modern rounded-xl shadow-lg overflow-hidden card-hover stagger-animation">
+              <div key={sermon.id || index} className="bg-white rounded-lg shadow-lg overflow-hidden card-hover stagger-animation">
                 {sermon.video_url ? (
                   <div className="aspect-video relative overflow-hidden">
                     {canEmbedVideo(sermon.video_url) ? (
@@ -2574,21 +2555,15 @@ Living Hope AG Team`;
   );
 
   const renderAbout = () => (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8 md:py-12 lg:py-16 relative overflow-hidden">
-      {/* Modern Particle Background */}
-      <Particles
-        particleColors={['#3b82f6', '#8b5cf6']}
-        particleCount={80}
-        particleSpread={15}
-        speed={0.02}
-        moveParticlesOnHover={true}
-        alphaParticles={true}
-        disableRotation={false}
-      />
-      
+    <div className="min-h-screen bg-white py-8 md:py-12 lg:py-16 relative overflow-hidden">
+      <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 0 }}>
+      </div>
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-8 md:mb-12 lg:mb-16 fade-in">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-800 leading-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-800 leading-tight" style={{
+            textShadow: '2px 2px 4px rgba(255, 255, 255, 0.8), -1px -1px 2px rgba(255, 255, 255, 0.8), 1px -1px 2px rgba(255, 255, 255, 0.8), -1px 1px 2px rgba(255, 255, 255, 0.8)',
+            WebkitTextStroke: '0.5px rgba(255, 255, 255, 0.5)'
+          }}>
             About Living Hope AG
           </h2>
           <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed px-2">
@@ -2605,7 +2580,7 @@ Living Hope AG Team`;
             />
           </div>
           <div className="slide-in-right order-1 lg:order-2">
-            <div className="bg-card-modern rounded-xl shadow-lg border border-gray-200 p-6 md:p-8">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-6 md:p-8">
               <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-gray-800 flex items-center">
                 <Heart className="h-6 w-6 sm:h-7 sm:w-7 text-blue-600 mr-3" />
                 Life at Living Hope AG
@@ -2696,18 +2671,16 @@ Living Hope AG Team`;
   );
 
   const renderEvents = () => (
-    <div className="min-h-screen bg-geometric py-8 md:py-16 relative overflow-hidden">
-      <div className="abstract-lines"></div>
-      
-      <div className="max-w-7xl mx-auto px-4 md:px-6 relative z-10">
-        <h2 className="font-bold text-center mb-12 text-white fade-in drop-shadow-lg" style={{
+    <div className="min-h-screen bg-gray-50 py-8 md:py-16">
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
+        <h2 className="font-bold text-center mb-12 text-gray-800 fade-in" style={{
           fontSize: 'clamp(1.5rem, 5vw + 0.5rem, 2.5rem)'
         }}>
           Events
         </h2>
         
         {events.length === 0 ? (
-          <div className="text-center py-12 mb-16 bg-card-modern rounded-2xl shadow-lg">
+          <div className="text-center py-12 mb-16">
             <div className="text-4xl md:text-6xl mb-4 opacity-50"><Calendar className="h-12 w-12 md:h-16 md:w-16 mx-auto" /></div>
             <h3 className="text-2xl font-semibold text-gray-600 mb-2">No Events Scheduled</h3>
             <p className="text-gray-500">Check back soon for upcoming events and activities!</p>
@@ -2949,20 +2922,14 @@ Living Hope AG Team`;
   );
 
   const renderContact = () => (
-    <div className="min-h-screen bg-abstract-waves py-8 md:py-12 lg:py-16 relative overflow-hidden">
-      <div className="floating-shapes">
-        <div className="floating-shape"></div>
-        <div className="floating-shape"></div>
-        <div className="floating-shape"></div>
-      </div>
-      
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 relative z-10">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 text-white fade-in drop-shadow-lg">
+    <div className="min-h-screen bg-gray-50 py-8 md:py-12 lg:py-16">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 text-gray-800 fade-in">
           Contact Us
         </h2>
         
         <div className="grid lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12">
-          <div className="bg-card-modern rounded-xl shadow-lg p-4 sm:p-6 md:p-8 card-hover slide-in-left">
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 card-hover slide-in-left">
             <h3 className="text-xl sm:text-2xl font-bold mb-4 md:mb-6 text-gray-800">Get In Touch</h3>
             
             <div className="space-y-4 md:space-y-6">
@@ -3001,7 +2968,7 @@ Living Hope AG Team`;
             </div>
           </div>
 
-          <div ref={contactFormRef} className="bg-card-modern rounded-xl shadow-lg p-4 sm:p-6 md:p-8 card-hover slide-in-right">
+          <div ref={contactFormRef} className="bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 card-hover slide-in-right">
             <h3 className="text-xl sm:text-2xl font-bold mb-4 md:mb-6 text-gray-800">Send Us a Message</h3>
             
             {submitMessage && (
