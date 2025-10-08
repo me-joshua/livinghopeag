@@ -17,7 +17,21 @@ module.exports = async function handler(req, res) {
 
   // Parse the URL to determine the route
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const path = url.pathname.replace('/api/public', '');
+  const path = url.pathname.replace('/api/public', '').replace('/api', '');
+
+  // Health check route
+  if (path === '/health') {
+    if (req.method === 'GET') {
+      return sendSuccess(res, {
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0',
+        environment: process.env.NODE_ENV || 'production'
+      });
+    } else {
+      return sendError(res, 'Method not allowed', 405);
+    }
+  }
 
   // Announcements route
   if (path === '/announcements') {

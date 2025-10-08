@@ -1,50 +1,12 @@
 ﻿{
   "rewrites": [
     {
-      "source": "/api/admin/login",
+      "source": "/api/admin/:path*",
       "destination": "/api/admin"
     },
     {
-      "source": "/api/admin/contact-forms",
-      "destination": "/api/admin"
-    },
-    {
-      "source": "/api/admin/announcements",
-      "destination": "/api/admin"
-    },
-    {
-      "source": "/api/admin/events",
-      "destination": "/api/admin"
-    },
-    {
-      "source": "/api/admin/media",
-      "destination": "/api/admin"
-    },
-    {
-      "source": "/api/announcements",
-      "destination": "/api/public"
-    },
-    {
-      "source": "/api/events",
-      "destination": "/api/public"
-    },
-    {
-      "source": "/api/media",
-      "destination": "/api/public"
-    },
-    {
-      "source": "/api/church-info",
-      "destination": "/api/public"
-    },
-    {
-      "source": "/api/contact",
+      "source": "/api/:path*",
       "destination": "/api/public"
     }
-  ],
-  "functions": {
-    "api/**/*.js": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  }
+  ]
 }

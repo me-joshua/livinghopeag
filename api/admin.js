@@ -35,7 +35,7 @@ module.exports = async function handler(req, res) {
 
   // Parse the URL to determine the route
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const path = url.pathname.replace('/api/admin', '');
+  const path = url.pathname.replace('/api/admin', '').replace('/api', '');
 
   // Login endpoint - no auth required
   if (path === '/login' && req.method === 'POST') {
