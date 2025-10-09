@@ -2419,9 +2419,13 @@ Living Hope AG Team`;
   };
 
   const renderSermons = () => (
-    <div className="min-h-screen bg-gray-50 py-8 md:py-16">
-      <div className="max-w-7xl mx-auto px-4 md:px-6">
-        <h2 className="font-bold text-center mb-6 md:mb-12 text-gray-800 fade-in" style={{
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 py-8 md:py-16 relative overflow-hidden">
+      {/* Animated Geometric Pattern Background */}
+      <div className="geometric-pattern"></div>
+      <div className="grid-pattern"></div>
+      
+      <div className="max-w-7xl mx-auto px-4 md:px-6 relative z-10">
+        <h2 className="font-bold text-center mb-6 md:mb-12 modern-heading fade-scale" style={{
           fontSize: 'clamp(1.5rem, 5vw + 0.5rem, 2.5rem)'
         }}>
           Latest Media
@@ -2435,7 +2439,7 @@ Living Hope AG Team`;
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {(Array.isArray(sermons) ? sermons : []).map((sermon, index) => (
-              <div key={sermon.id || index} className="bg-white rounded-lg shadow-lg overflow-hidden card-hover stagger-animation">
+              <div key={sermon.id || index} className={`glass-card rounded-2xl shadow-xl overflow-hidden modern-card-hover border border-gray-100 smooth-reveal stagger-${Math.min((index % 6) + 1, 6)}`}>
                 {sermon.video_url ? (
                   <div className="aspect-video relative overflow-hidden">
                     {canEmbedVideo(sermon.video_url) ? (
@@ -2570,18 +2574,17 @@ Living Hope AG Team`;
   );
 
   const renderAbout = () => (
-    <div className="min-h-screen bg-white py-8 md:py-12 lg:py-16 relative overflow-hidden">
-      <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 0 }}>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 py-8 md:py-12 lg:py-16 relative overflow-hidden">
+      {/* Animated Geometric Pattern Background */}
+      <div className="geometric-pattern"></div>
+      <div className="grid-pattern"></div>
+      
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 relative z-10">
-        <div className="text-center mb-8 md:mb-12 lg:mb-16 fade-in">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-800 leading-tight" style={{
-            textShadow: '2px 2px 4px rgba(255, 255, 255, 0.8), -1px -1px 2px rgba(255, 255, 255, 0.8), 1px -1px 2px rgba(255, 255, 255, 0.8), -1px 1px 2px rgba(255, 255, 255, 0.8)',
-            WebkitTextStroke: '0.5px rgba(255, 255, 255, 0.5)'
-          }}>
+        <div className="text-center mb-8 md:mb-12 lg:mb-16 fade-scale">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 modern-heading leading-tight">
             About Living Hope AG
           </h2>
-          <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed px-2">
+          <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed px-2 font-medium">
             We are a community of believers passionate about experiencing and sharing the life-changing love of Jesus Christ.
           </p>
         </div>
@@ -2594,8 +2597,8 @@ Living Hope AG Team`;
               className="rounded-xl shadow-lg w-full h-64 sm:h-80 md:h-96 object-cover img-transition"
             />
           </div>
-          <div className="slide-in-right order-1 lg:order-2">
-            <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-6 md:p-8">
+          <div className="slide-fade-up order-1 lg:order-2">
+            <div className="glass-card rounded-2xl shadow-xl border border-gray-100 p-6 md:p-8 modern-card-hover">
               <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-gray-800 flex items-center">
                 <Heart className="h-6 w-6 sm:h-7 sm:w-7 text-blue-600 mr-3" />
                 Life at Living Hope AG
@@ -2616,7 +2619,7 @@ Living Hope AG Team`;
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 sm:p-6 md:p-8 text-center card-hover stagger-animation border border-blue-200">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-4 sm:p-6 md:p-8 text-center modern-card-hover smooth-reveal stagger-1 border border-blue-200 shadow-lg">
             <div className="text-blue-600 mb-3 md:mb-4 icon-float flex justify-center">
               <Users className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12" />
             </div>
@@ -2630,7 +2633,7 @@ Living Hope AG Team`;
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 sm:p-6 md:p-8 text-center card-hover stagger-animation border border-purple-200">
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-4 sm:p-6 md:p-8 text-center modern-card-hover smooth-reveal stagger-2 border border-purple-200 shadow-lg">
             <div className="text-purple-600 mb-3 md:mb-4 icon-float flex justify-center">
               <Moon className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12" />
             </div>
@@ -2644,7 +2647,7 @@ Living Hope AG Team`;
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 sm:p-6 md:p-8 text-center card-hover stagger-animation border border-green-200 sm:col-span-2 lg:col-span-1">
+          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-4 sm:p-6 md:p-8 text-center modern-card-hover smooth-reveal stagger-3 border border-green-200 shadow-lg sm:col-span-2 lg:col-span-1">
             <div className="text-green-600 mb-3 md:mb-4 icon-float flex justify-center">
               <Star className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12" />
             </div>
@@ -2671,7 +2674,7 @@ Living Hope AG Team`;
               { icon: BookOpen, title: "Truth", description: "We base our lives on God's Word", color: "green" },
               { icon: Globe, title: "Mission", description: "We share the Gospel with our community", color: "purple" }
             ].map((value, index) => (
-              <div key={index} className={`bg-${value.color}-50 rounded-xl p-4 sm:p-6 text-center border border-${value.color}-200 stagger-animation card-hover`}>
+              <div key={index} className={`bg-${value.color}-50 rounded-2xl p-4 sm:p-6 text-center border border-${value.color}-200 smooth-reveal stagger-${index + 1} modern-card-hover shadow-lg`}>
                 <div className={`text-${value.color}-600 mb-3 flex justify-center`}>
                   <value.icon className="h-6 w-6 sm:h-8 sm:w-8" />
                 </div>
@@ -2686,9 +2689,13 @@ Living Hope AG Team`;
   );
 
   const renderEvents = () => (
-    <div className="min-h-screen bg-gray-50 py-8 md:py-16">
-      <div className="max-w-7xl mx-auto px-4 md:px-6">
-        <h2 className="font-bold text-center mb-12 text-gray-800 fade-in" style={{
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 py-8 md:py-16 relative overflow-hidden">
+      {/* Animated Geometric Pattern Background */}
+      <div className="geometric-pattern"></div>
+      <div className="grid-pattern"></div>
+      
+      <div className="max-w-7xl mx-auto px-4 md:px-6 relative z-10">
+        <h2 className="font-bold text-center mb-12 modern-heading fade-scale" style={{
           fontSize: 'clamp(1.5rem, 5vw + 0.5rem, 2.5rem)'
         }}>
           Events
@@ -2718,7 +2725,7 @@ Living Hope AG Team`;
                         <Link 
                           key={event.id || index} 
                           to={`/events/${event.id}`}
-                          className="block bg-white rounded-lg shadow-lg overflow-hidden card-hover stagger-animation transition-transform duration-200 hover:scale-105 cursor-pointer"
+                          className={`block glass-card rounded-2xl shadow-xl overflow-hidden modern-card-hover border border-gray-100 smooth-reveal stagger-${Math.min(index + 1, 6)} cursor-pointer`}
                         >
                           <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
                             <div className="text-center text-gray-500">
@@ -2776,7 +2783,7 @@ Living Hope AG Team`;
                         <Link 
                           key={event.id || index} 
                           to={`/events/${event.id}`}
-                          className="block bg-white rounded-lg shadow-lg overflow-hidden card-hover stagger-animation transition-transform duration-200 hover:scale-105"
+                          className={`block glass-card rounded-2xl shadow-lg overflow-hidden modern-card-hover border border-gray-100 smooth-reveal stagger-${Math.min((index % 6) + 1, 6)}`}
                         >
                           <div className="w-full h-32 bg-gray-200 flex items-center justify-center">
                             <div className="text-center text-gray-500">
@@ -2805,14 +2812,18 @@ Living Hope AG Team`;
   );
 
   const renderGive = () => (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 md:py-12 lg:py-16">
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-white py-8 md:py-12 lg:py-16 relative overflow-hidden">
+      {/* Animated Geometric Pattern Background */}
+      <div className="geometric-pattern"></div>
+      <div className="grid-pattern"></div>
+      
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 relative z-10">
         {/* Hero Section */}
-        <div className="text-center mb-8 md:mb-12 lg:mb-16 fade-in">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4 lg:mb-6 text-gray-800 leading-tight px-2">
+        <div className="text-center mb-8 md:mb-12 lg:mb-16 fade-scale">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4 lg:mb-6 modern-heading leading-tight px-2">
             Support Our Ministry
           </h1>
-          <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed px-4">
+          <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed px-4 font-medium">
             Your generous giving helps us continue spreading the Gospel, serving our community, and making a lasting impact in Oman.
           </p>
         </div>
@@ -2820,15 +2831,15 @@ Living Hope AG Team`;
         {/* Main Content Grid */}
         <div className="space-y-6 md:space-y-8 mb-8 md:mb-12 lg:mb-16">
           {/* Ways to Give - Now at the top, full width */}
-          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 card-hover slide-in-left">
+          <div className="glass-card rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 modern-card-hover slide-fade-up border border-gray-100">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-gray-800 text-center flex items-center justify-center">
-              <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-blue-600 mr-2 md:mr-3" />
+              <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-blue-600 mr-2 md:mr-3 modern-float" />
               Ways to Give
             </h2>
             
             <div className="grid sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6 max-w-4xl mx-auto">
               {/* Online Giving */}
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-xl border card-hover transform hover:scale-105 transition-all duration-300 flex flex-col">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-2xl border border-blue-200 modern-card-hover transform hover:scale-105 transition-all duration-300 flex flex-col shadow-lg">
                 <div className="text-center flex-1 flex flex-col">
                   <div className="bg-blue-600 rounded-full p-2 sm:p-3 w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 flex items-center justify-center">
                     <CreditCard className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
@@ -2849,7 +2860,7 @@ Living Hope AG Team`;
               </div>
 
               {/* Bank Transfer */}
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 sm:p-6 rounded-xl border card-hover transform hover:scale-105 transition-all duration-300 flex flex-col">
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 sm:p-6 rounded-2xl border border-purple-200 modern-card-hover transform hover:scale-105 transition-all duration-300 flex flex-col shadow-lg">
                 <div className="text-center flex-1 flex flex-col">
                   <div className="bg-purple-600 rounded-full p-2 sm:p-3 w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 flex items-center justify-center">
                     <Building className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
@@ -2878,7 +2889,7 @@ Living Hope AG Team`;
           {/* Scripture & Your Impact - Adjusted proportions */}
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
             {/* Scripture & Transparency - Increased width (2/3) */}
-            <div className="md:col-span-2 bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 appear flex flex-col">
+            <div className="md:col-span-2 glass-card rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 smooth-reveal flex flex-col border border-gray-100">
               <div className="text-center mb-4 sm:mb-6">
                 <Quote className="h-8 w-8 sm:h-10 sm:w-10 mx-auto text-blue-600 mb-2 sm:mb-3" />
                 <blockquote className="text-sm sm:text-base md:text-lg text-gray-700 italic leading-relaxed px-2">
@@ -2906,7 +2917,7 @@ Living Hope AG Team`;
             </div>
 
             {/* Your Impact - Reduced width (1/3) and matched height */}
-            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 card-hover slide-in-right flex flex-col">
+            <div className="glass-card rounded-2xl shadow-xl p-4 sm:p-6 modern-card-hover slide-fade-up flex flex-col border border-gray-100">
               <h3 className="text-base sm:text-lg md:text-xl font-bold mb-3 sm:mb-4 text-gray-800 flex items-center">
                 <Target className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mr-2" />
                 Your Impact
@@ -2937,14 +2948,18 @@ Living Hope AG Team`;
   );
 
   const renderContact = () => (
-    <div className="min-h-screen bg-gray-50 py-8 md:py-12 lg:py-16">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 text-gray-800 fade-in">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 py-8 md:py-12 lg:py-16 relative overflow-hidden">
+      {/* Animated Geometric Pattern Background */}
+      <div className="geometric-pattern"></div>
+      <div className="grid-pattern"></div>
+      
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 relative z-10">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 modern-heading fade-scale">
           Contact Us
         </h2>
         
         <div className="grid lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12">
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 card-hover slide-in-left">
+          <div className="glass-card rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 modern-card-hover slide-fade-up border border-gray-100">
             <h3 className="text-xl sm:text-2xl font-bold mb-4 md:mb-6 text-gray-800">Get In Touch</h3>
             
             <div className="space-y-4 md:space-y-6">
@@ -2983,7 +2998,7 @@ Living Hope AG Team`;
             </div>
           </div>
 
-          <div ref={contactFormRef} className="bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 card-hover slide-in-right">
+          <div ref={contactFormRef} className="glass-card rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 modern-card-hover slide-fade-up border border-gray-100">
             <h3 className="text-xl sm:text-2xl font-bold mb-4 md:mb-6 text-gray-800">Send Us a Message</h3>
             
             {submitMessage && (
@@ -3218,13 +3233,17 @@ Living Hope AG Team`;
   );
 
   const renderKnowGod = () => (
-    <div className="min-h-screen bg-white py-8 md:py-16">
-      <div className="max-w-4xl mx-auto px-4 md:px-6">
-        <div className="text-center mb-8 md:mb-12 fade-in">
-          <h2 className="font-bold mb-4 md:mb-6 text-gray-800" style={{
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8 md:py-16 relative overflow-hidden">
+      {/* Animated Geometric Pattern Background */}
+      <div className="geometric-pattern"></div>
+      <div className="grid-pattern"></div>
+      
+      <div className="max-w-4xl mx-auto px-4 md:px-6 relative z-10">
+        <div className="text-center mb-8 md:mb-12 fade-scale">
+          <h2 className="font-bold mb-4 md:mb-6 modern-heading" style={{
             fontSize: 'clamp(1.5rem, 5vw + 0.5rem, 2.5rem)'
           }}>Know God</h2>
-          <p className="text-base md:text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-base md:text-xl text-gray-700 max-w-2xl mx-auto font-medium">
             Discover the life-changing relationship with Jesus Christ, your Lord and Savior
           </p>
         </div>
@@ -3267,33 +3286,33 @@ Living Hope AG Team`;
               color: "bg-yellow-600"
             }
           ].map((step, index) => (
-            <div key={index} className="flex items-start space-x-3 sm:space-x-4 md:space-x-6 stagger-animation">
-              <div className={`flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${step.color} text-white rounded-full flex items-center justify-center font-bold text-sm sm:text-lg md:text-xl step-indicator`}>
+            <div key={index} className={`flex items-start space-x-3 sm:space-x-4 md:space-x-6 slide-fade-up stagger-${Math.min(index + 1, 6)}`}>
+              <div className={`flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${step.color} text-white rounded-full flex items-center justify-center font-bold text-sm sm:text-lg md:text-xl modern-float shadow-lg`}>
                 {step.number}
               </div>
-              <div className="slide-in-right flex-1">
+              <div className="flex-1 glass-card rounded-xl p-4 md:p-6 shadow-md hover:shadow-xl transition-all duration-300">
                 <h3 className="text-base sm:text-lg md:text-2xl font-bold mb-2 sm:mb-3 md:mb-4 text-gray-800">{step.title}</h3>
-                <p className="text-xs sm:text-sm md:text-base text-gray-600 mb-2 sm:mb-3 md:mb-4 italic leading-relaxed">{step.verse}</p>
-                <p className="text-xs sm:text-sm md:text-base text-gray-600 leading-relaxed">{step.content}</p>
+                <p className="text-xs sm:text-sm md:text-base text-blue-700 mb-2 sm:mb-3 md:mb-4 italic leading-relaxed font-semibold">{step.verse}</p>
+                <p className="text-xs sm:text-sm md:text-base text-gray-700 leading-relaxed">{step.content}</p>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="bg-blue-50 rounded-lg p-4 md:p-8 mt-8 md:mt-12 card-hover">
+        <div className="glass-card rounded-2xl p-4 md:p-8 mt-8 md:mt-12 modern-card-hover shadow-xl border border-blue-100">
           <h3 className="text-lg md:text-2xl font-bold mb-4 md:mb-6 text-gray-800 text-center">
             Ready to Take the Next Step?
           </h3>
-          <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6 text-center">
+          <p className="text-sm md:text-base text-gray-700 mb-4 md:mb-6 text-center font-medium">
             If you want to accept Jesus Christ as your Lord and Savior, you can pray this prayer:
           </p>
-          <div className="bg-white p-4 md:p-6 rounded-lg border-l-4 border-blue-600 subtle-glow">
-            <p className="text-sm md:text-base text-gray-700 italic leading-relaxed">
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-4 md:p-6 rounded-xl border-l-4 border-blue-600 pulse-glow">
+            <p className="text-sm md:text-base text-gray-800 italic leading-relaxed font-medium">
               "Dear God, I know that I am a sinner and I need Your forgiveness. I believe that Jesus Christ died for my sins and rose from the dead. I want to turn from my sins and invite Jesus to come into my heart and life. I want to trust and follow Him as my Lord and Savior. In Jesus' name, Amen."
             </p>
           </div>
           <div className="text-center mt-4 md:mt-6">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 md:px-8 rounded-lg btn-primary btn-ripple scale-hover text-sm md:text-base min-h-[48px] w-full sm:w-auto">
+            <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-6 md:px-8 rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 text-sm md:text-base min-h-[48px] w-full sm:w-auto">
               I Prayed This Prayer
             </button>
           </div>
@@ -3309,10 +3328,10 @@ Living Hope AG Team`;
               { icon: HandHeart, title: "Pray Daily", description: "Talk to God regularly and build your relationship with Him." },
               { icon: Church, title: "Join Our Church", description: "Connect with other believers and grow in your faith." }
             ].map((step, index) => (
-              <div key={index} className="text-center p-4 md:p-6 bg-gray-50 rounded-lg card-hover stagger-animation">
-                <div className="text-2xl md:text-3xl mb-3 md:mb-4 icon-float"><step.icon className="h-6 w-6 md:h-8 md:w-8 mx-auto" /></div>
-                <h4 className="font-semibold mb-2 text-sm md:text-base">{step.title}</h4>
-                <p className="text-gray-600 text-xs md:text-sm leading-relaxed">{step.description}</p>
+              <div key={index} className={`text-center p-4 md:p-6 glass-card rounded-xl modern-card-hover shadow-lg border border-gray-100 smooth-reveal stagger-${index + 1}`}>
+                <div className="text-2xl md:text-3xl mb-3 md:mb-4 modern-float"><step.icon className="h-6 w-6 md:h-8 md:w-8 mx-auto text-blue-600" /></div>
+                <h4 className="font-bold mb-2 text-sm md:text-base text-gray-800">{step.title}</h4>
+                <p className="text-gray-700 text-xs md:text-sm leading-relaxed">{step.description}</p>
               </div>
             ))}
           </div>
