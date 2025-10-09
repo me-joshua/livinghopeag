@@ -928,6 +928,7 @@ const AppContent = () => {
   const [nextImageIndex, setNextImageIndex] = useState(1);
   const [showNext, setShowNext] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMediaLoading, setIsMediaLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -1345,6 +1346,7 @@ const AppContent = () => {
 
   // Fetch public media
   const fetchSermons = async () => {
+    setIsMediaLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/media`);
       if (response.ok) {
@@ -1354,6 +1356,8 @@ const AppContent = () => {
     } catch (error) {
       console.error('Failed to fetch sermons:', error);
       setSermons([]);
+    } finally {
+      setIsMediaLoading(false);
     }
   };
 
@@ -2430,7 +2434,15 @@ Living Hope AG Team`;
         }}>
           Latest Media
         </h2>
-        {sermons.length === 0 ? (
+        {isMediaLoading ? (
+          <div className="text-center py-12">
+            <div className="inline-flex items-center justify-center w-16 h-16 mx-auto mb-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+            </div>
+            <h3 className="text-lg md:text-xl font-semibold text-gray-600 mb-2">Loading Media...</h3>
+            <p className="text-gray-500">Please wait while we fetch the latest content</p>
+          </div>
+        ) : sermons.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-4xl md:text-6xl mb-4 opacity-50"><BookOpen className="h-12 w-12 md:h-16 md:w-16 mx-auto" /></div>
             <h3 className="text-lg md:text-2xl font-semibold text-gray-600 mb-2">No Media Available</h3>
