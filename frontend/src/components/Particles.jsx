@@ -65,13 +65,11 @@ const Particles = React.memo(({
         particle.x += particle.vx;
         particle.y += particle.vy;
 
-        // Bounce off walls
-        if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
-        if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
-
-        // Keep in bounds
-        particle.x = Math.max(0, Math.min(canvas.width, particle.x));
-        particle.y = Math.max(0, Math.min(canvas.height, particle.y));
+        // Wrap around screen edges instead of bouncing
+        if (particle.x < -particle.size) particle.x = canvas.width + particle.size;
+        if (particle.x > canvas.width + particle.size) particle.x = -particle.size;
+        if (particle.y < -particle.size) particle.y = canvas.height + particle.size;
+        if (particle.y > canvas.height + particle.size) particle.y = -particle.size;
 
         // Draw particle
         ctx.save();

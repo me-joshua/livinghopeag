@@ -2215,9 +2215,9 @@ Living Hope AG Team`;
   );
 
   const renderHome = () => (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
       {/* Hero Section with Auto-switching Images */}
-      <div className="relative h-screen overflow-hidden hero-special">
+      <div className="relative h-screen overflow-hidden hero-special z-10">
         {/* Background Image - Current */}
         <div className="absolute inset-0">
           <img
@@ -2238,10 +2238,16 @@ Living Hope AG Team`;
         
         <div className="absolute inset-0 gradient-flow opacity-70 z-10"></div>
         
-        {/* Smudged bottom border for particles transition */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-50 via-gray-50/50 to-transparent z-20"></div>
+        {/* Subtle bottom fade for smoother particle transition */}
+        <div className="absolute bottom-0 left-0 right-0 h-12 z-20" style={{
+          background: 'linear-gradient(to top, rgba(249, 250, 251, 0.9) 0%, rgba(249, 250, 251, 0.6) 30%, rgba(249, 250, 251, 0.3) 60%, transparent 100%)',
+          backdropFilter: 'blur(2px)',
+          WebkitBackdropFilter: 'blur(2px)',
+          maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0.3) 70%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0.3) 70%, transparent 100%)'
+        }}></div>
         
-        <div className="relative z-10 flex items-center justify-center h-full text-center text-white px-4">
+        <div className="relative z-30 flex items-center justify-center h-full text-center text-white px-4">
           <div className="max-w-4xl fade-in">
             <h1 className="text-2xl md:text-5xl font-bold mb-3 md:mb-4 text-shadow-lg text-glow">
               Living Hope AG
@@ -2290,11 +2296,20 @@ Living Hope AG Team`;
       </div>
 
       {/* Announcements Section */}
-      <div className="bg-gray-50 py-16 relative overflow-hidden">
-        <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 0 }}>
+      <div className="bg-gray-50 py-16 relative z-10">
+        {/* Particles for all white space areas starting from announcements */}
+        <div style={{ 
+          width: '100%', 
+          height: 'calc(100vh - 64px)', // Cover from announcements to bottom
+          position: 'absolute', 
+          top: '0', 
+          left: '0', 
+          zIndex: 0, 
+          pointerEvents: 'none' 
+        }}>
           <Particles
             particleColors={['#000000', '#000000ff']}
-            particleCount={10}
+            particleCount={15}
             spread={10}
             speed={0.5}
             particleBaseSize={200}
@@ -4622,7 +4637,7 @@ Living Hope AG Team`;
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-white py-12 relative overflow-hidden">
+      <footer className="bg-gray-800 text-white py-12 relative overflow-hidden z-20">
         <div className="absolute inset-0 gradient-flow opacity-10"></div>
         <div className="max-w-7xl mx-auto px-4 relative z-10">
           <div className="grid md:grid-cols-3 gap-8">
