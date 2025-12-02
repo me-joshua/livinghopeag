@@ -2741,7 +2741,7 @@ Living Hope AG Team`;
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
             </div>
             <h3 className="text-lg md:text-xl font-semibold text-gray-600 mb-2">Loading Events...</h3>
-            <p className="text-gray-500">Please wait while we fetch upcoming events</p>
+            <p className="text-gray-500">Loading events...</p>
           </div>
         ) : events.length === 0 ? (
           <div className="text-center py-12 mb-16">
