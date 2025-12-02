@@ -2248,6 +2248,9 @@ Living Hope AG Team`;
           />
         </div>
         
+        {/* Black overlay for text visibility */}
+        <div className="absolute inset-0 bg-black opacity-30 z-10"></div>
+        
         {/* Subtle bottom fade for smoother particle transition */}
         <div className="absolute bottom-0 left-0 right-0 h-12 z-20" style={{
           background: 'linear-gradient(to top, rgba(249, 250, 251, 0.9) 0%, rgba(249, 250, 251, 0.6) 30%, rgba(249, 250, 251, 0.3) 60%, transparent 100%)',
