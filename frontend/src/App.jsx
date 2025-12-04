@@ -725,13 +725,33 @@ const EventDetailPage = () => {
 
         {/* Event Header */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-4 md:mb-8">
+        {eventDetail.image_url ? (
+          <div className="w-full h-48 md:h-56 lg:h-64 relative overflow-hidden">
+            <img 
+              src={eventDetail.image_url} 
+              alt={eventDetail.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center" style={{display: 'none'}}>
+              <div className="text-center text-white">
+                <Calendar className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-2 md:mb-4" />
+                <p className="text-base md:text-lg font-bold tracking-wide drop-shadow-lg">Event Image</p>
+              </div>
+            </div>
+          </div>
+        ) : (
           <div className="w-full h-48 md:h-56 lg:h-64 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
             <div className="text-center text-white">
               <Calendar className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-2 md:mb-4" />
               <p className="text-base md:text-lg font-bold tracking-wide drop-shadow-lg">Event Image</p>
             </div>
           </div>
-          
+        )}
+        
           <div className="p-4 md:p-6 lg:p-8">
             <div className="flex flex-col sm:flex-row sm:items-center mb-4 gap-2">
               {categoryInfo && (
@@ -1021,7 +1041,8 @@ const AppContent = () => {
     category: 'service',
     registration_required: false,
     contact_info: '',
-    gallery_folder_url: ''
+    gallery_folder_url: '',
+    image_url: ''
   });
   const [editingEvent, setEditingEvent] = useState(null);
   const [editEventData, setEditEventData] = useState({
@@ -1033,7 +1054,8 @@ const AppContent = () => {
     category: 'service',
     registration_required: false,
     contact_info: '',
-    gallery_folder_url: ''
+    gallery_folder_url: '',
+    image_url: ''
   });
 
   // Public sermons state
@@ -1998,7 +2020,8 @@ Living Hope AG Team`;
           category: 'service',
           registration_required: false,
           contact_info: '',
-          gallery_folder_url: ''
+          gallery_folder_url: '',
+          image_url: ''
         });
         fetchAdminEvents();
         alert('Event added successfully!');
@@ -2042,7 +2065,8 @@ Living Hope AG Team`;
       category: event.category,
       registration_required: event.registration_required,
       contact_info: event.contact_info || '',
-      gallery_folder_url: event.gallery_folder_url || ''
+      gallery_folder_url: event.gallery_folder_url || '',
+      image_url: event.image_url || ''
     });
   };
 
@@ -2057,7 +2081,8 @@ Living Hope AG Team`;
       category: 'service',
       registration_required: false,
       contact_info: '',
-      gallery_folder_url: ''
+      gallery_folder_url: '',
+      image_url: ''
     });
   };
 
@@ -2772,12 +2797,32 @@ Living Hope AG Team`;
                           to={`/events/${event.id}`}
                           className={`block glass-card rounded-2xl shadow-xl overflow-hidden modern-card-hover border border-gray-100 smooth-reveal stagger-${Math.min(index + 1, 6)} cursor-pointer`}
                         >
-                          <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                            <div className="text-center text-gray-500">
-                              <Calendar className="h-12 w-12 mx-auto mb-2" />
-                              <p>Event Image</p>
+                          {event.image_url ? (
+                            <div className="w-full h-48 relative overflow-hidden">
+                              <img 
+                                src={event.image_url} 
+                                alt={event.title}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'flex';
+                                }}
+                              />
+                              <div className="w-full h-48 bg-gray-200 flex items-center justify-center" style={{display: 'none'}}>
+                                <div className="text-center text-gray-500">
+                                  <Calendar className="h-12 w-12 mx-auto mb-2" />
+                                  <p>Event Image</p>
+                                </div>
+                              </div>
                             </div>
-                          </div>
+                          ) : (
+                            <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                              <div className="text-center text-gray-500">
+                                <Calendar className="h-12 w-12 mx-auto mb-2" />
+                                <p>Event Image</p>
+                              </div>
+                            </div>
+                          )}
                           <div className="p-6">
                             <div className="flex items-center mb-2">
                               <span className="text-xs font-semibold px-2.5 py-0.5 rounded bg-blue-100 text-blue-800">
@@ -2830,12 +2875,32 @@ Living Hope AG Team`;
                           to={`/events/${event.id}`}
                           className={`block glass-card rounded-2xl shadow-lg overflow-hidden modern-card-hover border border-gray-100 smooth-reveal stagger-${Math.min((index % 6) + 1, 6)}`}
                         >
-                          <div className="w-full h-32 bg-gray-200 flex items-center justify-center">
-                            <div className="text-center text-gray-500">
-                              <Calendar className="h-8 w-8 mx-auto mb-1" />
-                              <p className="text-xs">Event Image</p>
+                          {event.image_url ? (
+                            <div className="w-full h-32 relative overflow-hidden">
+                              <img 
+                                src={event.image_url} 
+                                alt={event.title}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'flex';
+                                }}
+                              />
+                              <div className="w-full h-32 bg-gray-200 flex items-center justify-center" style={{display: 'none'}}>
+                                <div className="text-center text-gray-500">
+                                  <Calendar className="h-8 w-8 mx-auto mb-1" />
+                                  <p className="text-xs">Event Image</p>
+                                </div>
+                              </div>
                             </div>
-                          </div>
+                          ) : (
+                            <div className="w-full h-32 bg-gray-200 flex items-center justify-center">
+                              <div className="text-center text-gray-500">
+                                <Calendar className="h-8 w-8 mx-auto mb-1" />
+                                <p className="text-xs">Event Image</p>
+                              </div>
+                            </div>
+                          )}
                           <div className="p-4">
                             <h4 className="font-semibold mb-1">{event.title}</h4>
                             <p className="text-sm text-gray-600">{new Date(event.date).toLocaleDateString()}</p>
@@ -4302,6 +4367,22 @@ Living Hope AG Team`;
                 )}
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Event Image URL (Google Drive)
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://drive.google.com/uc?id=..."
+                  value={newEvent.image_url}
+                  onChange={(e) => setNewEvent({...newEvent, image_url: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Use direct image link format: https://drive.google.com/uc?id=YOUR_FILE_ID
+                </p>
+              </div>
+
               <button
                 type="submit"
                 className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
@@ -4456,6 +4537,22 @@ Living Hope AG Team`;
                             Valid folder link detected
                           </p>
                         )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Event Image URL (Google Drive)
+                        </label>
+                        <input
+                          type="url"
+                          placeholder="https://drive.google.com/uc?id=..."
+                          value={editEventData.image_url}
+                          onChange={(e) => setEditEventData({...editEventData, image_url: e.target.value})}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Use direct image link format: https://drive.google.com/uc?id=YOUR_FILE_ID
+                        </p>
                       </div>
 
                       <div className="flex gap-2">

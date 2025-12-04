@@ -267,7 +267,8 @@ router.post('/events', requireAuth, async (req, res) => {
       category: category || null,
       registration_required: registration_required || false,
       contact_info: contact_info || null,
-      gallery_folder_url: gallery_folder_url || null
+      gallery_folder_url: gallery_folder_url || null,
+      image_url: image_url || null
     });
 
     if (!event) {
@@ -293,7 +294,7 @@ router.post('/events', requireAuth, async (req, res) => {
 router.put('/events/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, date, time, location, category, registration_required, contact_info, gallery_folder_url } = req.body;
+    const { title, description, date, time, location, category, registration_required, contact_info, gallery_folder_url, image_url } = req.body;
 
     const event = await db.updateEvent(id, {
       title,
@@ -304,7 +305,8 @@ router.put('/events/:id', requireAuth, async (req, res) => {
       category,
       registration_required,
       contact_info,
-      gallery_folder_url
+      gallery_folder_url,
+      image_url
     });
 
     if (!event) {
