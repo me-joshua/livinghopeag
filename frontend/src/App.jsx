@@ -2841,7 +2841,7 @@ Living Hope AG Team`;
                                 {EVENT_CATEGORY_OPTIONS.find(cat => cat.value === event.category)?.label || event.category || 'Event'}
                               </span>
                               <span className="ml-2 text-sm text-gray-500">
-                                {new Date(event.date).toLocaleDateString()} at {event.time}
+                                {new Date(event.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at {event.time}
                               </span>
                             </div>
                             <h3 className="text-xl font-semibold mb-2">{event.title}</h3>
@@ -2921,7 +2921,7 @@ Living Hope AG Team`;
                           )}
                           <div className="p-4">
                             <h4 className="font-semibold mb-1">{event.title}</h4>
-                            <p className="text-sm text-gray-600">{new Date(event.date).toLocaleDateString()}</p>
+                            <p className="text-sm text-gray-600">{new Date(event.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                             <p className="text-xs text-blue-600 mt-2 font-medium">View Gallery →</p>
                           </div>
                         </Link>
@@ -4611,7 +4611,7 @@ Living Hope AG Team`;
                         <p className="text-gray-600 mb-2 flex items-center gap-4">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
-                            {new Date(event.date).toLocaleDateString()}
+                            {new Date(event.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="h-4 w-4" />
