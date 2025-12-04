@@ -728,7 +728,7 @@ const EventDetailPage = () => {
         {eventDetail.image_url ? (
           <div className="w-full h-48 md:h-56 lg:h-64 relative overflow-hidden">
             <img 
-              src={eventDetail.image_url} 
+              src={convertDriveToEmbedUrl(eventDetail.image_url, 'image')} 
               alt={eventDetail.title}
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -2800,7 +2800,7 @@ Living Hope AG Team`;
                           {event.image_url ? (
                             <div className="w-full h-48 relative overflow-hidden">
                               <img 
-                                src={event.image_url} 
+                                src={convertDriveToEmbedUrl(event.image_url, 'image')} 
                                 alt={event.title}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
@@ -2878,7 +2878,7 @@ Living Hope AG Team`;
                           {event.image_url ? (
                             <div className="w-full h-32 relative overflow-hidden">
                               <img 
-                                src={event.image_url} 
+                                src={convertDriveToEmbedUrl(event.image_url, 'image')} 
                                 alt={event.title}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
@@ -4379,7 +4379,7 @@ Living Hope AG Team`;
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Use direct image link format: https://drive.google.com/uc?id=YOUR_FILE_ID
+                  Enter any Google Drive file URL. It will be automatically converted for display.
                 </p>
               </div>
 
@@ -4545,13 +4545,13 @@ Living Hope AG Team`;
                         </label>
                         <input
                           type="url"
-                          placeholder="https://drive.google.com/uc?id=..."
+                          placeholder="https://drive.google.com/file/d/YOUR_FILE_ID/view"
                           value={editEventData.image_url}
                           onChange={(e) => setEditEventData({...editEventData, image_url: e.target.value})}
                           className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          Use direct image link format: https://drive.google.com/uc?id=YOUR_FILE_ID
+                          Enter any Google Drive file URL. It will be automatically converted for display.
                         </p>
                       </div>
 
