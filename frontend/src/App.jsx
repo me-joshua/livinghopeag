@@ -728,12 +728,18 @@ const EventDetailPage = () => {
         {eventDetail.image_url ? (
           <div className="w-full h-48 md:h-56 lg:h-64 relative overflow-hidden">
             <img 
-              src={convertDriveToEmbedUrl(eventDetail.image_url, 'image')} 
+              src={eventDetail.image_url ? `https://drive.google.com/thumbnail?sz=w800&id=${extractDriveFileId(eventDetail.image_url)}` : ''}
               alt={eventDetail.title}
               className="w-full h-full object-cover"
               onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
+                // Try fallback URL first
+                const fileId = extractDriveFileId(eventDetail.image_url);
+                if (fileId && !e.target.src.includes('googleusercontent')) {
+                  e.target.src = `https://lh3.googleusercontent.com/d/${fileId}=w800-h600-rw`;
+                } else {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }
               }}
             />
             <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center" style={{display: 'none'}}>
@@ -2800,12 +2806,18 @@ Living Hope AG Team`;
                           {event.image_url ? (
                             <div className="w-full h-48 relative overflow-hidden">
                               <img 
-                                src={convertDriveToEmbedUrl(event.image_url, 'image')} 
+                                src={event.image_url ? `https://drive.google.com/thumbnail?sz=w400&id=${extractDriveFileId(event.image_url)}` : ''} 
                                 alt={event.title}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
-                                  e.target.style.display = 'none';
-                                  e.target.nextSibling.style.display = 'flex';
+                                  // Try fallback URL first
+                                  const fileId = extractDriveFileId(event.image_url);
+                                  if (fileId && !e.target.src.includes('googleusercontent')) {
+                                    e.target.src = `https://lh3.googleusercontent.com/d/${fileId}=w400-h300-rw`;
+                                  } else {
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling.style.display = 'flex';
+                                  }
                                 }}
                               />
                               <div className="w-full h-48 bg-gray-200 flex items-center justify-center" style={{display: 'none'}}>
@@ -2878,12 +2890,18 @@ Living Hope AG Team`;
                           {event.image_url ? (
                             <div className="w-full h-32 relative overflow-hidden">
                               <img 
-                                src={convertDriveToEmbedUrl(event.image_url, 'image')} 
+                                src={event.image_url ? `https://drive.google.com/thumbnail?sz=w300&id=${extractDriveFileId(event.image_url)}` : ''} 
                                 alt={event.title}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
-                                  e.target.style.display = 'none';
-                                  e.target.nextSibling.style.display = 'flex';
+                                  // Try fallback URL first
+                                  const fileId = extractDriveFileId(event.image_url);
+                                  if (fileId && !e.target.src.includes('googleusercontent')) {
+                                    e.target.src = `https://lh3.googleusercontent.com/d/${fileId}=w300-h200-rw`;
+                                  } else {
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling.style.display = 'flex';
+                                  }
                                 }}
                               />
                               <div className="w-full h-32 bg-gray-200 flex items-center justify-center" style={{display: 'none'}}>
